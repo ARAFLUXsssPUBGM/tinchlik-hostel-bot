@@ -499,7 +499,7 @@ bot.on('message', async (msg) => {
           Object.values(v).forEach(f => {
             Object.values(f).forEach(x => {
               Object.values(x).forEach(y => {
-                if (y.isFree) bo'shYotoqlar++;
+                if (y.isFree) boshYotoqlar++;
               });
             });
           });
