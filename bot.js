@@ -1,4 +1,4 @@
-const { Bot, Keyboard, InlineKeyboard, session } = require("gramby");
+const { Bot, Keyboard, InlineKeyboard, session } = require("grammy");
 const nedb = require("nedb-promises");
 const cron = require("node-cron");
 const http = require("http");
