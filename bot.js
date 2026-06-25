@@ -474,7 +474,7 @@ bot.on('message', async (msg) => {
     if (state === 'ADMIN_MAIN') {
       if (text === "📊 STATISTIKA") {
         let aktivlar = 0, erkaklar = 0, ayollar = 0, qarzdorlar = 0, qarzSumma = 0, buOydaKirdi = 0;
-        let bo'shYotoqlar = 0;
+        let boshYotoqlar = 0;
 
         // Stat hisoblash
         Object.values(db.kvartirantlar).forEach(k => {
