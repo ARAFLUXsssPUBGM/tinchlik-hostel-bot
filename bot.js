@@ -597,6 +597,33 @@ await clearAndSend(chatId, statText, adminMainKeyboard);
       } else {
         await bot.sendMessage(chatId, "Xato raqam kiritildi. Qayta yozing:");
       }
+      else if (state === 'ADMIN_ADD_REGION') {
+    try {
+        const regionName = text.trim();
+        if (!regionName) {
+            await bot.sendMessage(chatId, "⚠️ Viloyat nomi bo'sh bo'lishi mumkin emas!");
+            return;
+        }
+
+        if (!db.hostel_structure) db.hostel_structure = {};
+        
+        if (db.hostel_structure[regionName]) {
+            await bot.sendMessage(chatId, `⚠️ <b>${regionName}</b> bazada bor!`);
+            return;
+        }
+
+        db.hostel_structure[regionName] = {};
+        saveDB();
+        
+        sessions[chatId].state = 'ADMIN_MAIN';
+        await clearAndSend(chatId, `✅ Viloyat qo'shildi: <b>${regionName}</b>`, adminMainKeyboard);
+
+    } catch (error) {
+        console.error("Xato:", error);
+        await bot.sendMessage(chatId, `⚠️ <b>Viloyat qo'shishda xato bo'ldi!</b>\n\n💬 Xato: <code>${error.message}</code>`);
+    }
+        }
+      
     }
     else if (state === 'ADMIN_SET_CARD_NUM') {
       db.settings.card_number = text; saveDB();
