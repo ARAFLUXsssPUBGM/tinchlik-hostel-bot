@@ -505,7 +505,7 @@ bot.on('message', async (msg) => {
           });
         });
 
-        const statText = `📊 <b>HOSTEL STATISTIKASI</b>\n\n👥 Aktiv Kvartirantlar: <b>${aktivlar} ta</b>\nErkaklar — <b>${erkaklar}</b>\nAyollar   — <b>${ayollar}</b>\n\n🛏 Boʻsh yotoqlar : <b>${bo'shYotoqlar} ta</b>\n📉 Qarzdorlar soni: <b>${qarzdorlar} kishi</b>\n💰 Olinmagan qarzlar: <b>${formatMoney(qarzSumma)}</b>\n\n👉👤 Bu Oyda nechta Kvartirant qoʻshildi... — <b>${buOydaKirdi} ta</b>`;
+       const statText = `📊 <b>HOSTEL STATISTIKASI</b>\n\n👥 Aktiv Kvartirantlar: <b>${aktivlar} ta</b>\nErkaklar — <b>${erkaklar}</b>\nAyollar   — <b>${ayollar}</b>\n\n🛏 Boʻsh yotoqlar : <b>${boshYotoqlar} ta</b>\n📉 Qarzdorlar soni: <b>${qarzdorlar} kishi</b>\n💰 Olinmagan qarzlar: <b>${formatMoney(qarzSumma)}</b>\n\n👉👤 Bu Oyda nechta Kvartirant qoʻshildi... — <b>${buOydaKirdi} ta</b>`;
         await clearAndSend(chatId, statText, adminMainKeyboard);
       }
       else if (text === "📜 Qoida sozlash") {
