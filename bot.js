@@ -1,4 +1,15 @@
-/**
+const express = require('express');
+const app = express();
+const PORT = process.env.PORT || 10000;
+
+app.get('/', (req, res) => {
+  res.send('Tinchlik Hostel Bot faol va ishlamoqda!');
+});
+
+app.listen(PORT, () => {
+  console.log(`Veb-server ${PORT}-portda muvaffaqiyatli tinglamoqda.`);
+});
+
  * TINCHLIK HOSTEL - ADVANCED CRM BOT
  * Kutubxonalar: node-telegram-bot-api, node-cron
  * Fayl nomi: bot.js
