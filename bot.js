@@ -597,7 +597,8 @@ await clearAndSend(chatId, statText, adminMainKeyboard);
       } else {
         await bot.sendMessage(chatId, "Xato raqam kiritildi. Qayta yozing:");
       }
-      else if (state === 'ADMIN_ADD_REGION') {
+    }
+    else if (state === 'ADMIN_ADD_REGION') {
     try {
         const regionName = text.trim();
         if (!regionName) {
