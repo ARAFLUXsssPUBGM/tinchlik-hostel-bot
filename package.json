@@ -1,14 +1,14 @@
 {
   "name": "tinchlik-hostel-bot",
   "version": "1.0.0",
-  "description": "Tinchlik Hostel Telegram Bot",
+  "description": "Tinchlik Hostel CRM Bot",
   "main": "bot.js",
   "scripts": {
     "start": "node bot.js"
   },
   "dependencies": {
-    "grammy": "^1.20.0",
-    "nedb-promises": "^6.2.1",
-    "node-cron": "^3.0.3"
+    "node-telegram-bot-api": "^0.66.0",
+    "node-cron": "^3.0.3",
+    "express": "^4.19.2"
   }
 }
