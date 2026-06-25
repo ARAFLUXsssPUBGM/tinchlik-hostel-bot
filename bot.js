@@ -623,8 +623,7 @@ await clearAndSend(chatId, statText, adminMainKeyboard);
         await bot.sendMessage(chatId, `⚠️ <b>Viloyat qo'shishda xato bo'ldi!</b>\n\n💬 Xato: <code>${error.message}</code>`);
     }
         }
-      
-    }
+      }
     else if (state === 'ADMIN_SET_CARD_NUM') {
       db.settings.card_number = text; saveDB();
       pushState(chatId, 'ADMIN_SET_CARD_OWNER');
