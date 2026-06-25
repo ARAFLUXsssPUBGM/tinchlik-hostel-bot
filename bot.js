@@ -517,8 +517,17 @@ bot.on('message', async (msg) => {
           });
         });
 
-       const statText = `📊 <b>HOSTEL STATISTIKASI</b>\n\n👥 Aktiv Kvartirantlar: <b>${aktivlar} ta</b>\nErkaklar — <b>${erkaklar}</b>\nAyollar   — <b>${ayollar}</b>\n\n🛏 Boʻsh yotoqlar : <b>${boshYotoqlar} ta</b>\n📉 Qarzdorlar soni: <b>${qarzdorlar} kishi</b>\n💰 Olinmagan qarzlar: <b>${formatMoney(qarzSumma)}</b>\n\n👉👤 Bu Oyda nechta Kvartirant qoʻshildi... — <b>${buOydaKirdi} ta</b>`;
-        await clearAndSend(chatId, statText, adminMainKeyboard);
+const statText = `📊 <b>HOSTEL STATISTIKASI</b>\n\n` +
+`👥 Aktiv Kvartirantlar: <b>${aktivlar} ta</b>\n` +
+`👨 Erkaklar - <b>${erkaklar}</b>\n` +
+`👩 Ayollar - <b>${ayollar}</b>\n\n` +
+`🏢 Bo'sh yotoqlar : <b>${boshYotoqlar} ta</b>\n` +
+`📝 Qarzdorlar soni: <b>${qarzdorlar} kishi</b>\n` +
+`💰 Olinmagan qarzlar: <b>$${qarzSumma}</b>\n` +
+`📈 Bu Oyda nechta Kvartirant qo'shildi: <b>${buOydaKirdi} ta</b>`;
+        
+await clearAndSend(chatId, statText, adminMainKeyboard);
+        
       }
       else if (text === "📜 Qoida sozlash") {
         pushState(chatId, 'ADMIN_SET_RULES');
