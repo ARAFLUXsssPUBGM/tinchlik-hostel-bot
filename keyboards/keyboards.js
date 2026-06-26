@@ -28,14 +28,16 @@ const paymentTypeKeyboard = {
   resize_keyboard: true
 };
 
-const adminMainKeyboard = {
-  keyboard: [
-    [{ text: "👥 Kvartirantlar" }, { text: "📊 Statistika" }],
-    [{ text: "⚙️ Hostel Sozlamalari" }, { text: "📢 Xabar yuborish" }],
-    [{ text: "⬅️ Chiqish" }]
-  ],
-  resize_keyboard: true
-};
+function adminKeyboard(superAdminId, db) {
+  return {
+    keyboard: [
+      [{ text: "👥 Kvartirantlar" }, { text: "📊 Umumiy Statistika" }],
+      [{ text: "🏢 Viloyat/Filial Sozlamalari" }, { text: "⚙️ Bot Sozlamalari" }],
+      [{ text: "🔙 Orqaga" }]
+    ],
+    resize_keyboard: true
+  };
+}
 
 module.exports = {
   mainKeyboard: kvartirantKeyboard, // Agar asosiy menyu shu bo'lsa
