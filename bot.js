@@ -1189,39 +1189,267 @@ async function sendMurojaatToAdmins(userId, photoId = null, textMsg = "") {
     } catch(e){}
   }
 }
+// ==========================================
+// 1. ADMIN XABARLARINI TUTISH (bot.on('message'))
+// ==========================================
+bot.on('message', async (msg) => {
+  const chatId = msg.chat.id;
+  const text = msg.text;
 
-// ------------------- INLINE CALLBACK ISHLOVCHISI -------------------
+  // Faqat admin uchun ruxsat
+  if (!db.admins.includes(chatId)) return;
+
+  if (!sessions[chatId]) sessions[chatId] = {};
+  const session = sessions[chatId];
+
+  // A. VILOYAT NOMINI QABUL QILISH
+  if (session.state === 'WAITING_VILOYAT_NAME') {
+    if (!text) return bot.sendMessage(chatId, "❌ Iltimos, viloyat nomini matn shaklida yozing.");
+    
+    session.tempRegionName = text;
+    session.state = 'ADMIN_MAIN'; // holatni tiklash
+
+    // Tasdiqlash uchun inline tugma
+    const markup = {
+      reply_markup: {
+        inline_keyboard: [
+          [
+            { text: "✅ Ha, qo'shish", callback_data: 'confirm_viloyat_yes' },
+            { text: "❌ Bekor qilish", callback_data: 'confirm_viloyat_no' }
+          ]
+        ]
+      }
+    };
+    return bot.sendMessage(chatId, `❓ Haqiqatdan ham "${text}" viloyatini qo'shmoqchimisiz?`, markup);
+  }
+
+  // B. FILIAL NOMINI QABUL QILISH
+  if (session.state === 'WAITING_FILIAL_NAME') {
+    if (!text) return bot.sendMessage(chatId, "❌ Iltimos, filial nomini yozing.");
+    
+    const region = session.selectedRegion;
+    if (!db.hostel_structure) db.hostel_structure = {};
+    if (!db.hostel_structure[region]) db.hostel_structure[region] = {};
+    
+    db.hostel_structure[region][text] = {}; // Yangi filial yaratish
+    saveDB();
+
+    session.state = 'ADMIN_MAIN';
+    return bot.sendMessage(chatId, `✅ "${region}" viloyatiga "${text}" filiali muvaffaqiyatli qo'shildi!`);
+  }
+
+  // C. XONA NOMINI QABUL QILISH
+  if (session.state === 'WAITING_XONA_NAME') {
+    if (!text) return bot.sendMessage(chatId, "❌ Iltimos, xona nomini yoki raqamini yozing.");
+    
+    const region = session.selectedRegion;
+    const filial = session.selectedFilial;
+    
+    if (!db.hostel_structure[region][filial]) db.hostel_structure[region][filial] = {};
+    db.hostel_structure[region][filial][text] = []; // Xona ichida yotoqlar massivi bo'ladi
+    saveDB();
+
+    session.state = 'ADMIN_MAIN';
+    return bot.sendMessage(chatId, `✅ "${filial}" filialiga "${text}"-xona muvaffaqiyatli qo'shildi!`);
+  }
+
+  // D. YOTOQ JOYLARI SONINI QABUL QILISH
+  if (session.state === 'WAITING_YOTOQ_SONI') {
+    const krovkaSoni = parseInt(text);
+    if (isNaN(krovkaSoni) || krovkaSoni <= 0) {
+      return bot.sendMessage(chatId, "❌ Iltimos, faqat musbat son kiriting (Masalan: 4).");
+    }
+    
+    session.tempYotoqSoni = krovkaSoni;
+    session.state = 'WAITING_YOTOQ_NARXI';
+    return bot.sendMessage(chatId, `💰 Ushbu xonadagi yotoqlar uchun oylik narxni kiriting (Faqat son, masalan: 500000):`);
+  }
+
+  // E. YOTOQ NARXINI QABUL QILISH VA YAKUNLASH
+  if (session.state === 'WAITING_YOTOQ_NARXI') {
+    const narx = parseInt(text);
+    if (isNaN(narx) || narx <= 0) {
+      return bot.sendMessage(chatId, "❌ Iltimos, narxni to'g'ri son shaklida kiriting:");
+    }
+
+    const region = session.selectedRegion;
+    const filial = session.selectedFilial;
+    const xona = session.selectedXona;
+    const soni = session.tempYotoqSoni;
+
+    if (!db.hostel_structure[region][filial][xona]) db.hostel_structure[region][filial][xona] = [];
+
+    // Kiritilgan miqdorcha yotoq joyini qo'shish
+    for (let i = 1; i <= soni; i++) {
+      db.hostel_structure[region][filial][xona].push({
+        id: `${xona}_yotoq_${Date.now()}_${i}`,
+        status: 'bosh', // band yoki bosh
+        price: narx
+      });
+    }
+    saveDB();
+
+    session.state = 'ADMIN_MAIN';
+    return bot.sendMessage(chatId, `✅ "${filial}" filiali, "${xona}"-xonaga ${soni} ta yotoq joyi (Oylik: ${narx} so'm) muvaffaqiyatli qo'shildi!`);
+  }
+
+  // KEYBOARD TUGMALAR BOSILGANDA ISHGA TUSHISH
+  if (text === "➕ Viloyat qo'shish") {
+    session.state = 'WAITING_VILOYAT_NAME';
+    return bot.sendMessage(chatId, "📝 Iltimos, yangi viloyat nomini chatga yozib yuboring:");
+  }
+
+  if (text === "➕ Filial qo'shish") {
+    if (!db.hostel_structure || Object.keys(db.hostel_structure).length === 0) {
+      return bot.sendMessage(chatId, "❌ Avval viloyat qo'shishingiz kerak!");
+    }
+    
+    // Viloyatlarni inline tugma qilib chiqarish (Saf torttirish)
+    const buttons = Object.keys(db.hostel_structure).map(v => [{ text: v, callback_data: `addfilial_sel_vol_${v}` }]);
+    return bot.sendMessage(chatId, "📍 Qaysi viloyatga filial qo'shmoqchisiz? Tanlang:", { reply_markup: { inline_keyboard: buttons } });
+  }
+
+  if (text === "➕ Xona qo'shish") {
+    if (!db.hostel_structure || Object.keys(db.hostel_structure).length === 0) {
+      return bot.sendMessage(chatId, "❌ Tizimda viloyatlar mavjud emas!");
+    }
+    
+    // Avval viloyatni tanlatamiz
+    const buttons = Object.keys(db.hostel_structure).map(v => [{ text: v, callback_data: `addxona_sel_vol_${v}` }]);
+    return bot.sendMessage(chatId, "📍 Xona qo'shish uchun avval Viloyatni tanlang:", { reply_markup: { inline_keyboard: buttons } });
+  }
+
+  if (text === "➕ Yotoq qo'shish") {
+    if (!db.hostel_structure || Object.keys(db.hostel_structure).length === 0) {
+      return bot.sendMessage(chatId, "❌ Tizimda viloyatlar mavjud emas!");
+    }
+    
+    // Avval viloyatni tanlatamiz
+    const buttons = Object.keys(db.hostel_structure).map(v => [{ text: v, callback_data: `addyotoq_sel_vol_${v}` }]);
+    return bot.sendMessage(chatId, "📍 Yotoq qo'shish uchun avval Viloyatni tanlang:", { reply_markup: { inline_keyboard: buttons } });
+  }
+});
+
+
+// ==========================================
+// 2. INLINE TUGMALARNI QABUL QILISH (bot.on('callback_query'))
+// ==========================================
 bot.on('callback_query', async (query) => {
   const data = query.data;
   const chatId = query.message.chat.id;
-  if (data === 'confirm_viloyat_yes') {
-    const regionName = sessions[chatId]?.tempRegionName;
-    if (regionName) {
-      if (!db.hostel_structure) db.hostel_structure = {};
-      if (!db.hostel_structure[regionName]) db.hostel_structure[regionName] = {};
-      
-      saveDB();
-      sessions[chatId].state = 'ADMIN_MAIN'; 
-      delete sessions[chatId].tempRegionName;
-      saveSessions();
+  const messageId = query.message.message_id;
 
-      try { await bot.deleteMessage(chatId, query.message.message_id); } catch(e){}
-      await clearAndSend(chatId, `✅ <b>Muvaffaqiyatli:</b> "${regionName}" viloyati tizimga xavfsiz qo'shildi!`, adminMainKeyboard);
-    } else {
-      await bot.answerCallbackQuery(query.id, { text: "⚠️ Sessiya muddati tugagan yoki ma'lumot topilmadi.", show_alert: true });
+  if (!sessions[chatId]) sessions[chatId] = {};
+  const session = sessions[chatId];
+
+  // Viloyatni tasdiqlash YES
+  if (data === 'confirm_viloyat_yes') {
+    const regName = session.tempRegionName;
+    if (regName) {
+      if (!db.hostel_structure) db.hostel_structure = {};
+      if (!db.hostel_structure[regName]) db.hostel_structure[regName] = {};
+      saveDB();
+      
+      await bot.deleteMessage(chatId, messageId).catch(()=>{});
+      await bot.sendMessage(chatId, `✨ "${regName}" viloyati tizimga muvaffaqiyatli inline tugma sifatida qo'shildi!`);
     }
-    return;
+    return bot.answerCallbackQuery(query.id);
   }
 
+  // Viloyatni rad etish NO
   if (data === 'confirm_viloyat_no') {
-    sessions[chatId].state = 'ADMIN_MAIN';
-    delete sessions[chatId].tempRegionName;
-    saveSessions();
-    try { await bot.deleteMessage(chatId, query.message.message_id); } catch(e){}
-    await clearAndSend(chatId, "❌ Viloyat qo'shish jarayoni bekor qilindi.", adminMainKeyboard);
-    return;
-        }
-                                    
+    session.tempRegionName = null;
+    await bot.deleteMessage(chatId, messageId).catch(()=>{});
+    await bot.sendMessage(chatId, "❌ Viloyat qo'shish jarayoni bekor qilindi.");
+    return bot.answerCallbackQuery(query.id);
+  }
+
+  // --- FILIAL QO'SHISH UCHUN VILOYAT TANLANGANDA ---
+  if (data.startsWith('addfilial_sel_vol_')) {
+    const region = data.replace('addfilial_sel_vol_', '');
+    session.selectedRegion = region;
+    session.state = 'WAITING_FILIAL_NAME';
+    
+    await bot.deleteMessage(chatId, messageId).catch(()=>{});
+    await bot.sendMessage(chatId, `🏢 "${region}" viloyati tanlandi.\nEndi ushbu viloyat uchun qo'shiladigan **Filial nomini** chatga yozing:`);
+    return bot.answerCallbackQuery(query.id);
+  }
+
+  // --- XONA QO'SHISH UCHUN VILOYAT TANLANGANDA -> FILIALLAR SAF TORTADI ---
+  if (data.startsWith('addxona_sel_vol_')) {
+    const region = data.replace('addxona_sel_vol_', '');
+    session.selectedRegion = region;
+    
+    const filials = Object.keys(db.hostel_structure[region] || {});
+    if (filials.length === 0) {
+      await bot.sendMessage(chatId, `❌ "${region}" viloyatida hali filiallar yo'q. Avval filial qo'shing.`);
+      return bot.answerCallbackQuery(query.id);
+    }
+
+    const buttons = filials.map(f => [{ text: f, callback_data: `addxona_sel_fil_${f}` }]);
+    await bot.deleteMessage(chatId, messageId).catch(()=>{});
+    await bot.sendMessage(chatId, `🏢 "${region}" viloyatidagi filiallardan birini tanlang (Saf tortgan inline tugmalar):`, { reply_markup: { inline_keyboard: buttons } });
+    return bot.answerCallbackQuery(query.id);
+  }
+
+  // --- XONA QO'SHISH UCHUN FILIAL TANLANGANDA ---
+  if (data.startsWith('addxona_sel_fil_')) {
+    const filial = data.replace('addxona_sel_fil_', '');
+    session.selectedFilial = filial;
+    session.state = 'WAITING_XONA_NAME';
+
+    await bot.deleteMessage(chatId, messageId).catch(()=>{});
+    await bot.sendMessage(chatId, `🚪 "${session.selectedRegion}" -> "${filial}" tanlandi.\nEndi qo'shiladigan **Xona raqami yoki nomini** yozing:`);
+    return bot.answerCallbackQuery(query.id);
+  }
+
+  // --- YOTOQ QO'SHISH UCHUN VILOYAT TANLANGANDA -> FILIALLAR SAF TORTADI ---
+  if (data.startsWith('addyotoq_sel_vol_')) {
+    const region = data.replace('addyotoq_sel_vol_', '');
+    session.selectedRegion = region;
+
+    const filials = Object.keys(db.hostel_structure[region] || {});
+    if (filials.length === 0) {
+      await bot.sendMessage(chatId, `❌ Ushbu viloyatda filiallar yo'q.`);
+      return bot.answerCallbackQuery(query.id);
+    }
+
+    const buttons = filials.map(f => [{ text: f, callback_data: `addyotoq_sel_fil_${f}` }]);
+    await bot.deleteMessage(chatId, messageId).catch(()=>{});
+    await bot.sendMessage(chatId, "🏢 Filialni tanlang:", { reply_markup: { inline_keyboard: buttons } });
+    return bot.answerCallbackQuery(query.id);
+  }
+
+  // --- YOTOQ QO'SHISH UCHUN FILIAL TANLANGANDA -> XONALAR SAF TORTADI ---
+  if (data.startsWith('addyotoq_sel_fil_')) {
+    const filial = data.replace('addyotoq_sel_fil_', '');
+    session.selectedFilial = filial;
+    const region = session.selectedRegion;
+
+    const xonalar = Object.keys(db.hostel_structure[region][filial] || {});
+    if (xonalar.length === 0) {
+      await bot.sendMessage(chatId, `❌ "${filial}" filialida xonalar mavjud emas. Avval xona qo'shing.`);
+      return bot.answerCallbackQuery(query.id);
+    }
+
+    const buttons = xonalar.map(x => [{ text: `${x}-xona`, callback_data: `addyotoq_sel_xon_${x}` }]);
+    await bot.deleteMessage(chatId, messageId).catch(()=>{});
+    await bot.sendMessage(chatId, `🚪 "${filial}" filialidagi xonalardan birini tanlang:`, { reply_markup: { inline_keyboard: buttons } });
+    return bot.answerCallbackQuery(query.id);
+  }
+
+  // --- YOTOQ QO'SHISH UCHUN XONA TANLANGANDA ---
+  if (data.startsWith('addyotoq_sel_xon_')) {
+    const xona = data.replace('addyotoq_sel_xon_', '');
+    session.selectedXona = xona;
+    session.state = 'WAITING_YOTOQ_SONI';
+
+    await bot.deleteMessage(chatId, messageId).catch(()=>{});
+    await bot.sendMessage(chatId, `🛏 "${xona}"-xona tanlandi.\nUshbu xonaga **nechta yotoq joyi** qo'shmoqchisiz? (Faqat son yozing, masalan: 4):`);
+    return bot.answerCallbackQuery(query.id);
+  }
+});
+                           
   // Tasdiqlash tugmasi
   if (data.startsWith('verify_yes_')) {
     const targetUserId = data.split('_')[2];
