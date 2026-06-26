@@ -105,6 +105,6 @@ process.on('uncaughtException', (err) => {
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('⚠️ Va'da bajarilmadi (Unhandled Rejection):', reason);
+  console.error('⚠️ Va\'da bajarilmadi (Unhandled Rejection):', reason);
 });
-       
+
