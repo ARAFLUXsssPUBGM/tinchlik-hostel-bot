@@ -59,18 +59,30 @@ bot.on('message', async (msg) => {
   if (!text) return;
 
   // 2. Global /start buyrug'i kelganda
-  if (text === '/start') {
-    sessions[chatId].state = 'START';
-    if (chatId === MAIN_SUPER_ADMIN || (db.admins && db.admins[chatId])) {
-      sessions[chatId].state = 'ADMIN_MAIN';
-      return bot.sendMessage(chatId, "👋 Xush kelibsiz, Hurmatli Tinchlik Hostel Administratori!", adminMainKeyboard);
-    } else {
+bot.onText(/\/start/, async (msg) => {
+  const chatId = msg.chat.id;
+  
+  await bot.sendMessage(chatId, "👋 Tinchlik Hostel botiga xush kelibsiz!\n\n🤖 Bu bot orqali kvartira va kvartirantlar hisobini onlayn kuzatib borishingiz mumkin.", {
+    reply_markup: mainKeyboard // Fayllar strukturangizdagi kvartirantKeyboard obyektiga bog'langan
+  });
+});
+  
       // Oddiy foydalanuvchilar (Kvartirantlar) uchun bosh menyu
-      const { mainKeyboard } = require('./keyboards/keyboards');
-      return bot.sendMessage(chatId, "📌 Xush kelibsiz! Tinchlik Hostel botidan foydalanish uchun quyidagi menyuni tanlang:", mainKeyboard);
-    }
-  }
+      bot.onText(/\/admin/, async (msg) => {
+  const chatId = msg.chat.id;
+  const userId = msg.from.id;
 
+  // Foydalanuvchi asosiy admin ekanligini tekshiramiz
+  if (userId === MAIN_SUPER_ADMIN) {
+    await bot.sendMessage(chatId, "👋 Xush kelibsiz, Hurmatli Tinchlik Hostel Administratori!\n⚙️ Quyidagi menyu orqali tizimni boshqarishingiz mumkin:", {
+      reply_markup: adminKeyboard(MAIN_SUPER_ADMIN, db) // Admin funksional tugmalarini biriktiramiz
+    });
+  } else {
+    // Agar oddiy foydalanuvchi /admin buyrug'ini yozsa
+    await bot.sendMessage(chatId, "⚠️ Kechirasiz, bu buyruq faqat administratorlar uchun ochiq.");
+  }
+});
+  
   // 3. Admin Menyusi tugmalari bosilganda (Oddiy matnli buyruqlar)
   const adminButtons = [
     "📊 Umumiy Statistika", "🏢 Viloyat/Filial Sozlamalari", 
