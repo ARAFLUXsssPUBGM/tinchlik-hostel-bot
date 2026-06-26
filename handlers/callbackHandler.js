@@ -130,9 +130,9 @@ function startCronValidationRobot(bot, db, sessions) {
       
       // Agar allaqachon qarzda bo'lsa, har kun uchun qarzni o'stirish
       if (farqKun <= 0 && kv.status === 'qarz') {
-        const o'tganKunlar = Math.abs(farqKun);
+        const oʻtganKunlar = Math.abs(farqKun);
         const kunlikUniversal = db.settings.daily_price || 0;
-        kv.summa = o'tganKunlar * kunlikUniversal;
+        kv.summa = oʻtganKunlar * kunlikUniversal;
         saveDB();
       }
     }
