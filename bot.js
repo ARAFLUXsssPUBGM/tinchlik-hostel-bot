@@ -1445,7 +1445,7 @@ bot.on('callback_query', async (query) => {
     await bot.sendMessage(chatId, `🛏 "${xona}"-xona tanlandi.\nUshbu xonaga **nechta yotoq joyi** qo'shmoqchisiz? (Faqat son yozing, masalan: 4):`);
     return bot.answerCallbackQuery(query.id);
   }
-});
+
                            
   // Tasdiqlash tugmasi
   if (data.startsWith('verify_yes_')) {
