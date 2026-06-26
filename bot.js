@@ -200,30 +200,57 @@ const paymentTypeKeyboard = {
 // ------------------- BOT START BUYRUG'I -------------------
 bot.onText(/\/start/, async (msg) => {
   const chatId = msg.chat.id;
-  sessions[chatId] = { history: [], lastMessageIds: sessions[chatId]?.lastMessageIds || [] };
   
+  // Admin xabarlarini tozalash zanjiri (Agar chatda oldingi /admin buyruqlari qolib ketgan bo'lsa)
+  if (db.admins.includes(chatId) && sessions[chatId]?.lastMessageIds) {
+    for (const msgId of sessions[chatId].lastMessageIds) {
+      try { await bot.deleteMessage(chatId, msgId); } catch(e){}
+    }
+  }
+
+  // Sessiyani tozalash va yangilash
+  sessions[chatId] = { history: [], lastMessageIds: [] };
+  
+  // Foydalanuvchi yozgan /start buyrug'ining o'zini o'chirish
   try { await bot.deleteMessage(chatId, msg.message_id); } catch(e){}
 
-  if (db.kvartirantlar[chatId] && (db.kvartirantlar[chatId].status === 'aktiv' || db.kvartirantlar[chatId].status === 'qarz')) {
+  // Ma'lumotlar omborida Chat ID orqali kvartirant ekanligini va holatini tekshirish (aktiv yoki qarz)
+  if (db.kvartirantlar && db.kvartirantlar[chatId] && (db.kvartirantlar[chatId].status === 'aktiv' || db.kvartirantlar[chatId].status === 'qarz')) {
     const filial = db.kvartirantlar[chatId].filial || "HOSTEL";
     pushState(chatId, 'KVARTIRANT_MENU');
     await clearAndSend(chatId, `Assalomu alaykum <b>${filial}</b> Profilingizga xush kelibsiz...❕`, kvartirantKeyboard);
   } else {
+    // Agar bazada yo'q bo'lsa yoki status to'g'ri kelmasa - Oddiy foydalanuvchi menyusi
     pushState(chatId, 'MAIN_MENU');
     await clearAndSend(chatId, "<b>Tinchlik HOSTEL</b> tizimiga xush kelibsiz! Quyidagi tugmalardan birini tanlang:", mainKeyboard);
   }
 });
 
-// Admin panelga kirish
+// ------------------- ADMIN PANELGA KIRISH -------------------
 bot.onText(/\/admin/, async (msg) => {
   const chatId = msg.chat.id;
-  try { await bot.deleteMessage(chatId, msg.message_id); } catch(e){}
 
-  if (!db.admins.includes(chatId)) {
-    return bot.sendMessage(chatId, "Kechirasiz hurmatli foydalanuvchi Siz Admin paneliga kirish huquqiga ega emassiz...!");
+  // 1. Birinchi navbatda adminlik huquqini tekshirish
+  if (!db.admins || !db.admins.includes(chatId)) {
+    // Oddiy foydalanuvchi yozgan /admin buyrug'ining o'zini zudlik bilan chatdan o'chirish
+    try { await bot.deleteMessage(chatId, msg.message_id); } catch(e){}
+    return bot.sendMessage(chatId, "⚠️ Kechirasiz hurmatli foydalanuvchi Siz Admin paneliga kirish huquqiga ega emassiz...!");
   }
 
-  sessions[chatId] = { history: [], lastMessageIds: sessions[chatId]?.lastMessageIds || [] };
+  // 2. Agar foydalanuvchi haqiqatan ham admin bo'lsa, /start xabarlarini va uning zanjirini tozalash
+  if (sessions[chatId]?.lastMessageIds) {
+    for (const msgId of sessions[chatId].lastMessageIds) {
+      try { await bot.deleteMessage(chatId, msgId); } catch(e){}
+    }
+  }
+
+  // Sessiyani admin uchun qayta yangilash
+  sessions[chatId] = { history: [], lastMessageIds: [] };
+  
+  // Admin yozgan /admin buyrug'ining o'zini chatdan o'chirish
+  try { await bot.deleteMessage(chatId, msg.message_id); } catch(e){}
+
+  // Admin panelni faollashtirish va menyuni chiqarish
   pushState(chatId, 'ADMIN_MAIN');
   await clearAndSend(chatId, "👑 <b>Admin paneliga xush kelibsiz!</b>\nBarcha tizim boshqaruv elementlari quyida joylashgan:", adminMainKeyboard);
 });
