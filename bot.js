@@ -1192,7 +1192,7 @@ async function sendMurojaatToAdmins(userId, photoId = null, textMsg = "") {
 // ==========================================
 // 1. ADMIN XABARLARINI TUTISH (bot.on('message'))
 // ==========================================
-
+bot.on('message', async (msg) => {
   const text = msg.text;
 
   // Faqat admin uchun ruxsat
