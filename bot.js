@@ -1222,9 +1222,6 @@ bot.on('callback_query', async (query) => {
     return;
         }
                                     
-  const chatId = query.message.chat.id;
-  const data = query.data;
-
   // Tasdiqlash tugmasi
   if (data.startsWith('verify_yes_')) {
     const targetUserId = data.split('_')[2];
