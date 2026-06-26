@@ -1,143 +1,143 @@
-// Guruhlar va admin paneldagi inline tugmalardan keladigan so'rovlarni qayta ishlash
-const { saveDB } = require('../config/database');
-const { pushState } = require('../config/sessions');
-const { updateKvartirantInGroup } = require('../utils/groupNotifier');
-const { generateAnketaText } = require('../utils/helpers');
+// Inline tugmalar va Avtomatlashgan 3 mahal tekshiruv tizimi (Cron Job) moduli
+const { saveDB } = require('../config/db');
+const { saveSessions, pushState } = require('../config/sessions');
+const { clearAndSend } = require('../utils/interface');
+const { mainKeyboard, adminKeyboard } = require('../keyboards/keyboards');
+const { generateAnketaText, generateAnketaInlineMarkup, formatMoney } = require('../utils/helpers');
 
-async function handleCallbackQueries(bot, callbackQuery, db, sessions) {
-  const chatId = callbackQuery.message.chat.id;
-  const messageId = callbackQuery.message.message_id;
-  const data = callbackQuery.data;
+async function handleCallbackQuery(bot, query, db, sessions, adminMainKeyboard) {
+  const chatId = query.message.chat.id;
+  const messageId = query.message.message_id;
+  const data = query.data;
 
-  // 1. Kvartirant arizasini tasdiqlash
-  if (data.startsWith('verify_yes_')) {
-    const userId = data.split('_')[2];
-    
-    // Agar sessionda yoki vaqtinchalik ro'yxatda ma'lumot bo'lsa, bazaga aktiv qilib qo'shamiz
-    if (sessions[userId]?.regData) {
-      db.kvartirantlar[userId] = {
-        ...sessions[userId].regData,
-        status: 'aktiv',
-        joinedAt: new Date()
-      };
-    } else if (db.kvartirantlar[userId]) {
-      db.kvartirantlar[userId].status = 'aktiv';
-    } else {
-      await bot.answerCallbackQuery(callbackQuery.id, { text: "⚠️ Arizachi ma'lumotlari topilmadi!", show_alert: true });
-      return;
+  // 1. Yangi viloyat qo'shishni tasdiqlash dinamikasi
+  if (data === "confirm_viloyat_yes") {
+    const regionName = sessions[chatId]?.tempRegionName;
+    if (regionName) {
+      if (!db.hostel_structure) db.hostel_structure = {};
+      if (!db.hostel_structure[regionName]) db.hostel_structure[regionName] = {};
+      saveDB();
+      
+      delete sessions[chatId].tempRegionName;
+      sessions[chatId].state = 'ADMIN_MAIN';
+      saveSessions();
+
+      try { await bot.deleteMessage(chatId, messageId); } catch(e){}
+      await clearAndSend(bot, chatId, `✅ Yangi viloyat <b>"${regionName}"</b> muvaffaqiyatli tizim matritsasiga qo'shildi!`, adminMainKeyboard);
     }
+    return;
+  }
+  
+  if (data === "confirm_viloyat_no") {
+    if (sessions[chatId]) delete sessions[chatId].tempRegionName;
+    sessions[chatId].state = 'ADMIN_MAIN';
+    saveSessions();
 
+    try { await bot.deleteMessage(chatId, messageId); } catch(e){}
+    await clearAndSend(bot, chatId, "❌ Viloyat qo'shish bekor qilindi.", adminMainKeyboard);
+    return;
+  }
+
+  // 2. Kvartirantlar anketasini guruhlarda va shaxsiyda boshqarish (Dinamik interfeys)
+  const [action, targetUserId] = data.split('_');
+  if (!targetUserId || !db.kvartirantlar[targetUserId]) return;
+
+  const kv = db.kvartirantlar[targetUserId];
+
+  if (action === "comment") {
+    pushState(chatId, `COMMENT_INPUT_${targetUserId}`);
+    await bot.sendMessage(chatId, `📝 Kvartirant <b>${kv.name}</b> uchun guruhda ko'rinadigan maxsus eslatma/izoh matnini yozing:`, { parse_mode: 'HTML' });
+  }
+  
+  else if (action === "out") {
+    // Xonadan chiqarish logikasi: Joyni bo'shatish
+    if (db.hostel_structure && kv.region && kv.filial && kv.room && kv.bed) {
+      try {
+        if (db.hostel_structure[kv.region]?.[kv.filial]?.[kv.room]?.[kv.bed]) {
+          db.hostel_structure[kv.region][kv.filial][kv.room][kv.bed].isFree = true;
+        }
+      } catch(e){}
+    }
+    kv.status = 'tark-etgan';
     saveDB();
 
-    // Guruhdagi xabarni yangilash (Tugmalarni olib tashlaymiz)
-    const updatedText = generateAnketaText(userId, db, sessions) + `\n\n=== 🟢 ADMIN TOMONIDAN TASDIQLANDI ===`;
-    await bot.editMessageText(updatedText, { chat_id: chatId, message_id: messageId, parse_mode: 'HTML' });
+    // Guruhdagi postni yangilash yoki o'chirish
+    const targetGroup = kv.status === 'aktiv' ? db.settings.Aktiv_Guruh : db.settings.Qarz_Guruh;
+    if (targetGroup && kv.groupMsgId) {
+      try {
+        await bot.editMessageCaption(`❌ <b>USHBU KVARITRANT HOSTELNI TARK ETDI</b>\n\nIsmi: ${kv.name}\nSana: ${new Date().toLocaleDateString()}`, {
+          chat_id: targetGroup,
+          message_id: kv.groupMsgId
+        });
+      } catch(e){}
+    }
     
-    // Foydalanuvchining o'ziga xushxabarni yuborish
-    try {
-      await bot.sendMessage(userId, "🎉 Tabriklaymiz! Sizning arizangiz administrator tomonidan tasdiqlandi. Endi bot imkoniyatlaridan to'liq foydalanishingiz mumkin.");
-    } catch (e) {
-      // Foydalanuvchi botni bloklagan bo'lsa xatolik bermasligi uchun
-    }
-
-    // Aktiv guruhga ham anketasini chiroyli qilib yuborish
-    await updateKvartirantInGroup(bot, userId, db, sessions, "group_active");
-    await bot.answerCallbackQuery(callbackQuery.id, { text: "Kvartirant muvaffaqiyatli tasdiqlandi!" });
-  }
-
-  // 2. Kvartirant arizasini rad etish
-  else if (data.startsWith('verify_no_')) {
-    const userId = data.split('_')[2];
-
-    const updatedText = `<b>❌ ARIZA RAD ETILDI</b>\n\nFoydalanuvchi ID: ${userId}`;
-    await bot.editMessageText(updatedText, { chat_id: chatId, message_id: messageId, parse_mode: 'HTML' });
-
-    try {
-      await bot.sendMessage(userId, "❌ Afsuski, siz yuborgan ariza administrator tomonidan rad etildi. Ma'lumotlarni qayta tekshirib, to'g'ri kiritishingizni so'raymiz.");
-    } catch (e) {}
-
-    if (sessions[userId]) {
-      sessions[userId].state = 'MAIN_MENU';
-      sessions[userId].regData = null;
-    }
-    await bot.answerCallbackQuery(callbackQuery.id, { text: "Ariza rad etildi." });
-  }
-
-  // 3. To'lovni tasdiqlash
-  else if (data.startsWith('pay_yes_')) {
-    const parts = data.split('_');
-    const userId = parts[2];
-    const summa = parseFloat(parts[3]);
-    const payType = parts[4];
-
-    if (db.kvartirantlar[userId]) {
-      db.kvartirantlar[userId].status = 'aktiv'; // To'lov qilsa status aktivga o'tadi
-      
-      db.payments.push({
-        userId,
-        fish: db.kvartirantlar[userId].fish,
-        summa,
-        payType,
-        date: new Date()
-      });
-      saveDB();
-    }
-
-    const updatedText = `<b>✅ TO'LOV TASDIQLANDI</b>\n\nSuma: ${summa} so'm\nUslub: ${payType}\nKvartirant ID: ${userId}`;
-    await bot.editMessageText(updatedText, { chat_id: chatId, message_id: messageId, parse_mode: 'HTML' });
-
-    try {
-      await bot.sendMessage(userId, `✅ Siz yuborgan ${summa} so'mlik to'lov ma'muriyat tomonidan tasdiqlandi. Rahmat!`);
-    } catch (e) {}
-
-    await bot.answerCallbackQuery(callbackQuery.id, { text: "To'lov muvaffaqiyatli qabul qilindi!" });
-  }
-
-  // 4. To'lovni rad etish
-  else if (data.startsWith('pay_no_')) {
-    const userId = data.split('_')[2];
-
-    const updatedText = `<b>❌ TO'LOV RAD ETILDI</b>\n\nKvartirant ID: ${userId}`;
-    await bot.editMessageText(updatedText, { chat_id: chatId, message_id: messageId, parse_mode: 'HTML' });
-
-    try {
-      await bot.sendMessage(userId, "❌ Siz yuborgan to'lov cheki ma'muriyat tomonidan rad etildi. Iltimos, chek to'g'riligini yoki pul o'tganini tekshirib, qayta yuboring.");
-    } catch (e) {}
-
-    await bot.answerCallbackQuery(callbackQuery.id, { text: "To'lov arizasi rad etildi." });
-  }
-
-  // 5. Guruh ichidan turib kvartirantga eslatma/notalar yozish (Admin trigger)
-  else if (data.startsWith('group_note_')) {
-    const userId = data.split('_')[2];
-    
-    // Guruhda tugmani bosgan adminning shaxsiy chatiga o'tishini so'raymiz
-    // Chunki eslatma matnini shaxsiyda yozib olish qulay
-    pushState(callbackQuery.from.id, `WRITE_NOTE_FOR_${userId}`);
-    
-    await bot.answerCallbackQuery(callbackQuery.id, { 
-      text: "📝 Eslatma yozish uchun botning shaxsiy chatiga (/admin bo'limiga) o'ting!", 
-      show_alert: true 
-    });
-  }
-
-  // 6. Kvartirant hostelni tark etganda arxivga kuzatish
-  else if (data.startsWith('group_exit_')) {
-    const userId = data.split('_')[2];
-
-    if (db.kvartirantlar[userId]) {
-      db.kvartirantlar[userId].status = 'arxiv';
-      saveDB();
-      
-      const updatedText = generateAnketaText(userId, db, sessions) + `\n\n=== ⛔ HOSTELDAN CHIQIB KETDI (ARXIVLANDI) ===`;
-      await bot.editMessageText(updatedText, { chat_id: chatId, message_id: messageId, parse_mode: 'HTML' });
-
-      // Arxiv guruhiga ko'chirish
-      await updateKvartirantInGroup(bot, userId, db, sessions, "group_archive");
-    }
-    await bot.answerCallbackQuery(callbackQuery.id, { text: "Kvartirant arxivga ko'chirildi." });
+    await bot.sendMessage(chatId, `✅ ${kv.name} tizimda 'tark-etgan' holatiga o'tkazildi va yotoq joyi bo'shatildi.`);
   }
 }
 
-module.exports = { handleCallbackQueries };
+// 3. AVTOMATLASHGAN 3 MAHAL TEKSHIRUV ROBOTI (CRON INTERVAL TASK)
+function startCronValidationRobot(bot, db, sessions) {
+  // Har 6 soatda (kuniga 4 marta mukammal tekshiruv) muddatlarni nazorat qilish
+  setInterval(async () => {
+    const hozir = new Date();
+    
+    for (const [uId, kv] of Object.entries(db.kvartirantlar || {})) {
+      if (kv.status !== 'aktiv' && kv.status !== 'qarz') continue;
+      
+      const tugashSana = new Date(kv.endDate);
+      const farqVaqt = tugashSana - hozir;
+      const farqKun = Math.ceil(farqVaqt / (1000 * 60 * 60 * 24));
+
+      // Holat 1: Muddat tugashiga 3 kun qolganda (Ogohlantirish)
+      if (farqKun === 3 && !kv.warned3) {
+        kv.warned3 = true; saveDB();
+        await bot.sendMessage(uId, `⚠️ <b>DIQQAT OGOHLANTIRISH!</b>\n\nHosteldagi ijara muddatingiz tugashiga <b>3 kun</b> qoldi.\nTo'lov muddatini uzaytirish uchun menyudan foydalaning.`, { parse_mode: 'HTML' }).catch(()=>{});
+      }
+      
+      // Holat 2: Muddat tugashiga 1 kun qolganda (Oxirgi eslatma)
+      if (farqKun === 1 && !kv.warned1) {
+        kv.warned1 = true; saveDB();
+        await bot.sendMessage(uId, `🚨 <b>OXIRGI OGOHLANTIRISH!</b>\n\nErtaga ijara muddatingiz yakunlanadi. Iltimos, bugun to'lovni amalga oshirib chekni botga yuklang!`, { parse_mode: 'HTML' }).catch(()=>{});
+      }
+
+      // Holat 3: Muddat o'tib ketganda (Avtomatik Qarzga tushirish va guruhini almashtirish)
+      if (farqKun <= 0 && kv.status === 'aktiv') {
+        kv.status = 'qarz';
+        // Qarz summasini hisoblash (kunlik narx bo'yicha o'sib boradi)
+        const kunlikUniversal = db.settings.daily_price || 0;
+        kv.summa = (kv.summa || 0) + kunlikUniversal;
+        saveDB();
+
+        // Aktiv guruhdan eski postni o'chirishga urinish
+        if (db.settings.Aktiv_Guruh && kv.groupMsgId) {
+          try { await bot.deleteMessage(db.settings.Aktiv_Guruh, kv.groupMsgId); } catch(e){}
+        }
+
+        // Qarz guruhiga yangi dynamic post chiqarish
+        if (db.settings.Qarz_Guruh) {
+          const text = generateAnketaText(uId, db, sessions);
+          const markup = generateAnketaInlineMarkup(uId, "group_active");
+          try {
+            const m = await bot.sendPhoto(db.settings.Qarz_Guruh, kv.selfiePhoto, { caption: text, reply_markup: markup, parse_mode: 'HTML' });
+            kv.groupMsgId = m.message_id;
+            saveDB();
+          } catch(e){}
+        }
+
+        await bot.sendMessage(uId, `🔴 <b>IJARA MUDDATINGIZ TUGADI!</b>\n\nTizim sizni avtomatik ravishda qarzdorlar ro'yxatiga kiritdi. Kunlik qarz hisoblanishi boshlandi: <b>${formatMoney(kunlikUniversal)} / kun</b>.`, { parse_mode: 'HTML' }).catch(()=>{});
+      }
+      
+      // Agar allaqachon qarzda bo'lsa, har kun uchun qarzni o'stirish
+      if (farqKun <= 0 && kv.status === 'qarz') {
+        const o'tganKunlar = Math.abs(farqKun);
+        const kunlikUniversal = db.settings.daily_price || 0;
+        kv.summa = o'tganKunlar * kunlikUniversal;
+        saveDB();
+      }
+    }
+  }, 1000 * 60 * 60 * 6); // Har 6 soatda aylanadi
+}
+
+module.exports = { handleCallbackQuery, startCronValidationRobot };
       
