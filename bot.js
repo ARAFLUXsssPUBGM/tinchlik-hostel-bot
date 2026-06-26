@@ -1327,7 +1327,7 @@ async function sendMurojaatToAdmins(userId, photoId = null, textMsg = "") {
     const buttons = Object.keys(db.hostel_structure).map(v => [{ text: v, callback_data: `addyotoq_sel_vol_${v}` }]);
     return bot.sendMessage(chatId, "📍 Yotoq qo'shish uchun avval Viloyatni tanlang:", { reply_markup: { inline_keyboard: buttons } });
   }
-
+}
 // ==========================================
 // 2. INLINE TUGMALARNI QABUL QILISH (bot.on('callback_query'))
 // ==========================================
