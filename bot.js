@@ -7,7 +7,8 @@ const { db } = require('./config/db');
 const { sessions } = require('./config/sessions');
 
 // 2. Klaviaturalarni yuklash
-const { adminKeyboard } = require('./keyboards/keyboards');
+const keyboardsModule = require('./keyboards/keyboards');
+const adminKeyboard = keyboardsModule.adminKeyboard;
 
 // 3. Handlerlarni (Ishlov beruvchilarni) ulash
 const { handleAdminMenu, handleAdminStates } = require('./handlers/adminMenuHandler');
