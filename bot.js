@@ -113,13 +113,23 @@ function formatDate(date) {
   return `${day}.${month}.${year}`;
 }
 
-// Chat tozaligini ta'minlash: Eski xabarlarni xavfsiz o'chirish va yangisini yuborish
+// ========================================================================
+//   CHAT TOZALIGINI TA'MINLASH VA BUYRUQLAR FILTRATSIYASI MATRIXI
+// ========================================================================
+
 async function clearAndSend(chatId, text, replyMarkup) {
   if (sessions[chatId] && sessions[chatId].lastMessageIds) {
     for (let msgId of sessions[chatId].lastMessageIds) {
+      // QAT'IY QOIDA: /start va /admin xabarlarini HECH QANDAY ichki tizim o'chira olmaydi!
+      if (sessions[chatId].startMenuId === msgId || sessions[chatId].adminMenuId === msgId) {
+        continue; 
+      }
       try { await bot.deleteMessage(chatId, msgId); } catch (e) {}
     }
-    sessions[chatId].lastMessageIds = [];
+    // Faqat /start va /admin menyularini reestrda saqlab qolamiz, qolganlar tozalanadi
+    sessions[chatId].lastMessageIds = sessions[chatId].lastMessageIds.filter(id => 
+      id === sessions[chatId].startMenuId || id === sessions[chatId].adminMenuId
+    );
   } else {
     if (!sessions[chatId]) sessions[chatId] = {};
     sessions[chatId].lastMessageIds = [];
@@ -133,6 +143,73 @@ async function clearAndSend(chatId, text, replyMarkup) {
     console.error(`❌ Chat ${chatId} ga xabar yuborish muvaffaqiyatsiz tugadi:`, e);
   }
 }
+
+// ------------------- BOT START BUYRUG'I -------------------
+bot.onText(/\/start/, async (msg) => {
+  const chatId = msg.chat.id;
+  
+  if (!sessions[chatId]) sessions[chatId] = { history: [], lastMessageIds: [] };
+
+  // Agarda ushbu admin chatida eski /admin menyu xabari mavjud bo'lsa, uni o'chirish (o'zaro almashish)
+  if (db.admins.includes(chatId) && sessions[chatId].adminMenuId) {
+    try { await bot.deleteMessage(chatId, sessions[chatId].adminMenuId); } catch (e) {}
+    sessions[chatId].lastMessageIds = sessions[chatId].lastMessageIds.filter(id => id !== sessions[chatId].adminMenuId);
+    delete sessions[chatId].adminMenuId;
+  }
+
+  // QAT'IY QOIDA: Foydalanuvchi yozgan /start buyrug'i matnining o'zi chatdan O'CHIRILMAYDI!
+
+  // Kvartirantlik holatini bazadan tekshirish
+  if (db.kvartirantlar && db.kvartirantlar[chatId] && (db.kvartirantlar[chatId].status === 'aktiv' || db.kvartirantlar[chatId].status === 'qarz')) {
+    const filial = db.kvartirantlar[chatId].filial || "HOSTEL";
+    pushState(chatId, 'KVARTIRANT_MENU');
+    
+    const sentMsg = await bot.sendMessage(chatId, `Assalomu alaykum <b>${filial}</b> Profilingizga xush kelibsiz...❕`, { reply_markup: kvartirantKeyboard, parse_mode: 'HTML' });
+    
+    sessions[chatId].startMenuId = sentMsg.message_id;
+    sessions[chatId].lastMessageIds.push(sentMsg.message_id);
+  } else {
+    // Oddiy foydalanuvchi menyusi
+    pushState(chatId, 'MAIN_MENU');
+    const sentMsg = await bot.sendMessage(chatId, "<b>Tinchlik HOSTEL</b> tizimiga xush kelibsiz! Quyidagi tugmalardan birini tanlang:", { reply_markup: mainKeyboard, parse_mode: 'HTML' });
+    
+    sessions[chatId].startMenuId = sentMsg.message_id;
+    sessions[chatId].lastMessageIds.push(sentMsg.message_id);
+  }
+  saveSessions();
+});
+
+// ------------------- ADMIN PANELGA KIRISH -------------------
+bot.onText(/\/admin/, async (msg) => {
+  const chatId = msg.chat.id;
+
+  // 1. Adminlik huquqini tekshirish
+  if (!db.admins || !db.admins.includes(chatId)) {
+    // Oddiy foydalanuvchi yozgan /admin buyrug'ini zudlik bilan o'chirib tashlash
+    try { await bot.deleteMessage(chatId, msg.message_id); } catch (e) {}
+    return bot.sendMessage(chatId, "⚠️ Kechirasiz hurmatli foydalanuvchi Siz Admin paneliga kirish huquqiga ega emassiz...!");
+  }
+
+  if (!sessions[chatId]) sessions[chatId] = { history: [], lastMessageIds: [] };
+
+  // Agarda faol /start menyu xabari bo'lsa, uni butunlay o'chirib tashlash (o'zaro almashish)
+  if (sessions[chatId].startMenuId) {
+    try { await bot.deleteMessage(chatId, sessions[chatId].startMenuId); } catch (e) {}
+    sessions[chatId].lastMessageIds = sessions[chatId].lastMessageIds.filter(id => id !== sessions[chatId].startMenuId);
+    delete sessions[chatId].startMenuId;
+  }
+
+  // QAT'IY QOIDA: Admin yozgan /admin buyrug'i matnining o'zi chatdan O'CHIRILMAYDI!
+
+  // Yangi Admin panel menyusini yuborish
+  pushState(chatId, 'ADMIN_MAIN');
+  const sentMsg = await bot.sendMessage(chatId, "👑 <b>Admin paneliga xush kelibsiz!</b>\nBarcha tizim boshqaruv elementlari quyida joylashgan:", { reply_markup: adminMainKeyboard, parse_mode: 'HTML' });
+  
+  sessions[chatId].adminMenuId = sentMsg.message_id;
+  sessions[chatId].lastMessageIds.push(sentMsg.message_id);
+  
+  saveSessions();
+});
 
 // State navigation boshqaruvi
 function pushState(chatId, state) {
