@@ -1192,9 +1192,8 @@ async function sendMurojaatToAdmins(userId, photoId = null, textMsg = "") {
 
 // ------------------- INLINE CALLBACK ISHLOVCHISI -------------------
 bot.on('callback_query', async (query) => {
-    const data = query.data;
+  const data = query.data;
   const chatId = query.message.chat.id;
-
   if (data === 'confirm_viloyat_yes') {
     const regionName = sessions[chatId]?.tempRegionName;
     if (regionName) {
