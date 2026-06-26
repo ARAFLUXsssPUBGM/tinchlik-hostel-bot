@@ -1327,7 +1327,7 @@ async function sendMurojaatToAdmins(userId, photoId = null, textMsg = "") {
     const buttons = Object.keys(db.hostel_structure).map(v => [{ text: v, callback_data: `addyotoq_sel_vol_${v}` }]);
     return bot.sendMessage(chatId, "📍 Yotoq qo'shish uchun avval Viloyatni tanlang:", { reply_markup: { inline_keyboard: buttons } });
   }
-}
+
 // ==========================================
 // 2. INLINE TUGMALARNI QABUL QILISH (bot.on('callback_query'))
 // ==========================================
@@ -1461,7 +1461,7 @@ bot.on('callback_query', async (query) => {
       // Admin panellardagi arizalarni sinxron tozalash
       if (sessions[targetUserId] && sessions[targetUserId].adminMsgMap) {
         for (let admId of Object.keys(sessions[targetUserId].adminMsgMap)) {
-          try { await bot.deleteMessage(admId, sessions[targetUserId].adminMsgMap[admId]); } catch(e){}
+          try { bot.deleteMessage(admId, sessions[targetUserId].adminMsgMap[admId]); } catch(e){}
         }
       }
 
