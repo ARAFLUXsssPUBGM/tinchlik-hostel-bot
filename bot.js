@@ -749,7 +749,6 @@ bot.on('message', async (msg) => {
         await clearAndSend(chatId, "✅ Admin muvaffaqiyatli o'chirildi.", adminMainKeyboard);
       }
     }
-
     // ========================================================================
     //               XATOLIKLAR TUZATILGAN STRUKTURA MATRIXI
     // ========================================================================
@@ -814,36 +813,26 @@ bot.on('message', async (msg) => {
       return;
     }
     
-if (state === 'STRUCT_ADD_VILOYAT') {
-  const regionName = text.trim();
-  
-  // Noto'g'ri buyruqlar yoki belgilarni tekshirish (filtr)
-  if (regionName.length < 2 || regionName.startsWith('/') || regionName.includes('back')) {
-    return bot.sendMessage(chatId, "⚠️ Noto'g'ri nom! Iltimos, viloyat nomini to'g'ri matn shaklida qaytadan kiriting:");
-  }
+    else if (state === 'STRUCT_ADD_VILOYAT') {
+      const regionName = text.trim();
+      
+      if (regionName.length < 2 || regionName.startsWith('/') || regionName.toLowerCase().includes('back') || regionName === "⬅️ Ortga qaytish") {
+        return bot.sendMessage(chatId, "⚠️ Noto'g'ri nom! Iltimos, viloyat nomini to'g'ri matn shaklida qaytadan kiriting:");
+      }
 
-  // Ma'lumotni vaqtincha saqlab turish
-  if (!sessions[chatId]) sessions[chatId] = {};
-  sessions[chatId].tempRegionName = regionName;
-  sessions[chatId].state = 'STRUCT_CONFIRM_VILOYAT'; // Holatni tasdiqlash rejimiga o'tkazamiz
-  saveSessions();
-
-  // Inline tugma dizayni
-  const inlineKeyboard = {
-    inline_keyboard: [
-      [
-        { text: "✅ Ha, qo'shilsin", callback_data: "confirm_viloyat_yes" },
-        { text: "❌ Bekor qilish", callback_data: "confirm_viloyat_no" }
-      ]
-    ]
-  };
-
-  await bot.sendMessage(chatId, `❓ Tizimga yangi viloyat qo'shishni tasdiqlaysizmi?\n\nViloyat nomi: <b>${regionName}</b>`, {
-    reply_markup: inlineKeyboard,
-    parse_mode: 'HTML'
-  });
-  return;
-}
+      if (!db.hostel_structure) db.hostel_structure = {};
+      
+      // To'g'ridan-to'g'ri bazaga yozish va iyerarxiyani ochish
+      if (!db.hostel_structure[regionName]) {
+        db.hostel_structure[regionName] = {};
+        saveDB();
+        sessions[chatId].state = 'ADMIN_MAIN'; saveSessions();
+        await clearAndSend(chatId, `✅ Tizimga yangi viloyat muvaffaqiyatli qo'shildi: <b>${regionName}</b>`, adminMainKeyboard);
+      } else {
+        await bot.sendMessage(chatId, "⚠️ Ushbu viloyat tizimda allaqachon mavjud! Boshqa nom kiriting:");
+      }
+      return;
+    }
     else if (state === 'STRUCT_DEL_VILOYAT') {
       if (db.hostel_structure && db.hostel_structure[text]) {
         delete db.hostel_structure[text]; saveDB();
@@ -859,6 +848,9 @@ if (state === 'STRUCT_ADD_VILOYAT') {
     else if (state === 'STRUCT_ADD_FILIAL_NAME') {
       const vil = sessions[chatId].tempStruct.viloyat;
       const filialName = text.trim();
+      if (!db.hostel_structure) db.hostel_structure = {};
+      if (!db.hostel_structure[vil]) db.hostel_structure[vil] = {};
+      
       if (db.hostel_structure[vil]) {
         if (!db.hostel_structure[vil][filialName]) db.hostel_structure[vil][filialName] = {};
         saveDB();
@@ -898,6 +890,10 @@ if (state === 'STRUCT_ADD_VILOYAT') {
       const vil = sessions[chatId].tempStruct.viloyat;
       const fil = sessions[chatId].tempStruct.filial;
       const roomName = text.trim();
+      if (!db.hostel_structure) db.hostel_structure = {};
+      if (!db.hostel_structure[vil]) db.hostel_structure[vil] = {};
+      if (!db.hostel_structure[vil][fil]) db.hostel_structure[vil][fil] = {};
+
       if (db.hostel_structure[vil] && db.hostel_structure[vil][fil]) {
         if (!db.hostel_structure[vil][fil][roomName]) db.hostel_structure[vil][fil][roomName] = {};
         saveDB();
@@ -962,6 +958,7 @@ if (state === 'STRUCT_ADD_VILOYAT') {
         const xon = sessions[chatId].tempStruct.xona;
         const yot = sessions[chatId].tempStruct.yotoqName;
 
+        if (!db.hostel_structure) db.hostel_structure = {};
         if (!db.hostel_structure[vil]) db.hostel_structure[vil] = {};
         if (!db.hostel_structure[vil][fil]) db.hostel_structure[vil][fil] = {};
         if (!db.hostel_structure[vil][fil][xon]) db.hostel_structure[vil][fil][xon] = {};
@@ -1013,7 +1010,7 @@ if (state === 'STRUCT_ADD_VILOYAT') {
     }
     return;
   }
-
+  
           // --- OMBOXONA/GURUHDA ADMIN TOMONIDAN MUTASADDI ESLATMA KIRITILGANDA ---
   if (state.startsWith('COMMENT_INPUT_')) {
     try { await bot.deleteMessage(chatId, msg.message_id); } catch(e){}
