@@ -789,14 +789,36 @@ bot.on('message', async (msg) => {
       return;
     }
     
-    // ZANJIRLI ARXITEKTURA ELEMENTLARI (STEP BY STEP PROCESSING)
-    if (state === 'STRUCT_ADD_VILOYAT') {
-      const regionName = text.trim();
-      if (!db.hostel_structure) db.hostel_structure = {};
-      if (!db.hostel_structure[regionName]) db.hostel_structure[regionName] = {};
-      saveDB(); sessions[chatId].state = 'ADMIN_MAIN'; saveSessions();
-      await clearAndSend(chatId, `✅ Viloyat "${regionName}" arxitekturaga qo'shildi.`, adminMainKeyboard);
-    }
+if (state === 'STRUCT_ADD_VILOYAT') {
+  const regionName = text.trim();
+  
+  // Noto'g'ri buyruqlar yoki belgilarni tekshirish (filtr)
+  if (regionName.length < 2 || regionName.startsWith('/') || regionName.includes('back')) {
+    return bot.sendMessage(chatId, "⚠️ Noto'g'ri nom! Iltimos, viloyat nomini to'g'ri matn shaklida qaytadan kiriting:");
+  }
+
+  // Ma'lumotni vaqtincha saqlab turish
+  if (!sessions[chatId]) sessions[chatId] = {};
+  sessions[chatId].tempRegionName = regionName;
+  sessions[chatId].state = 'STRUCT_CONFIRM_VILOYAT'; // Holatni tasdiqlash rejimiga o'tkazamiz
+  saveSessions();
+
+  // Inline tugma dizayni
+  const inlineKeyboard = {
+    inline_keyboard: [
+      [
+        { text: "✅ Ha, qo'shilsin", callback_data: "confirm_viloyat_yes" },
+        { text: "❌ Bekor qilish", callback_data: "confirm_viloyat_no" }
+      ]
+    ]
+  };
+
+  await bot.sendMessage(chatId, `❓ Tizimga yangi viloyat qo'shishni tasdiqlaysizmi?\n\nViloyat nomi: <b>${regionName}</b>`, {
+    reply_markup: inlineKeyboard,
+    parse_mode: 'HTML'
+  });
+  return;
+}
     else if (state === 'STRUCT_DEL_VILOYAT') {
       if (db.hostel_structure && db.hostel_structure[text]) {
         delete db.hostel_structure[text]; saveDB();
@@ -1170,6 +1192,37 @@ async function sendMurojaatToAdmins(userId, photoId = null, textMsg = "") {
 
 // ------------------- INLINE CALLBACK ISHLOVCHISI -------------------
 bot.on('callback_query', async (query) => {
+    const data = query.data;
+  const chatId = query.message.chat.id;
+
+  if (data === 'confirm_viloyat_yes') {
+    const regionName = sessions[chatId]?.tempRegionName;
+    if (regionName) {
+      if (!db.hostel_structure) db.hostel_structure = {};
+      if (!db.hostel_structure[regionName]) db.hostel_structure[regionName] = {};
+      
+      saveDB();
+      sessions[chatId].state = 'ADMIN_MAIN'; 
+      delete sessions[chatId].tempRegionName;
+      saveSessions();
+
+      try { await bot.deleteMessage(chatId, query.message.message_id); } catch(e){}
+      await clearAndSend(chatId, `✅ <b>Muvaffaqiyatli:</b> "${regionName}" viloyati tizimga xavfsiz qo'shildi!`, adminMainKeyboard);
+    } else {
+      await bot.answerCallbackQuery(query.id, { text: "⚠️ Sessiya muddati tugagan yoki ma'lumot topilmadi.", show_alert: true });
+    }
+    return;
+  }
+
+  if (data === 'confirm_viloyat_no') {
+    sessions[chatId].state = 'ADMIN_MAIN';
+    delete sessions[chatId].tempRegionName;
+    saveSessions();
+    try { await bot.deleteMessage(chatId, query.message.message_id); } catch(e){}
+    await clearAndSend(chatId, "❌ Viloyat qo'shish jarayoni bekor qilindi.", adminMainKeyboard);
+    return;
+        }
+                                    
   const chatId = query.message.chat.id;
   const data = query.data;
 
