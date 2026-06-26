@@ -1502,9 +1502,9 @@ bot.on('callback_query', async (query) => {
         try {
           let sentGroupMsg;
           if (regData.selfiePhoto) {
-            sentGroupMsg = await bot.sendPhoto(db.settings.Aktiv_Guruh, regData.selfiePhoto, { caption: groupText, reply_markup: groupMarkup, parse_mode: 'HTML' });
+            sentGroupMsg = bot.sendPhoto(db.settings.Aktiv_Guruh, regData.selfiePhoto, { caption: groupText, reply_markup: groupMarkup, parse_mode: 'HTML' });
           } else {
-            sentGroupMsg = await bot.sendMessage(db.settings.Aktiv_Guruh, groupText, { reply_markup: groupMarkup, parse_mode: 'HTML' });
+            sentGroupMsg = bot.sendMessage(db.settings.Aktiv_Guruh, groupText, { reply_markup: groupMarkup, parse_mode: 'HTML' });
           }
           db.kvartirantlar[targetUserId].groupMsgId = sentGroupMsg.message_id;
           saveDB();
