@@ -191,7 +191,7 @@ cron_hours.forEach(scheduleTime => {
           try { await bot.deleteMessage(db.settings.Aktiv_Guruh, kv.group_msg_id); } catch(e){}
         }
         
-        const qarz_text = `⚠️ <b>QARZDOR Kvartirant</b>\n\n👤 <b>F.I.SH:</b> ${kv.fio}\n📅 <b>Tugʻilgan sanasi:</b> ${kv.bdate}\n🪪 <b>Pasport Seriyasi:</b> ${kv.passport}\n🆔 <b>JSHSHIR Raqami:</b> ${kv.jshshir}\n📞 <b>Tel Raqami:</b> ${kv.phone}\n📅 <b>Muddati tugagan:</b> ${kv.end_date}\n📌 <b>Eslatma:</b> ${kv.eslatma || 'Yo'q'}`;
+        const qarz_text = `⚠️ <b>QARZDOR Kvartirant</b>\n\n👤 <b>F.I.SH:</b> ${kv.fio}\n📅 <b>Tugʻilgan sanasi:</b> ${kv.bdate}\n🪪 <b>Pasport Seriyasi:</b> ${kv.passport}\n🆔 <b>JSHSHIR Raqami:</b> ${kv.jshshir}\n📞 <b>Tel Raqami:</b> ${kv.phone}\n📅 <b>Muddati tugagan:</b> ${kv.end_date}\n📌 <b>Eslatma:</b> ${kv.eslatma || 'Yoq'}`;
         const qarz_inline = {
           inline_keyboard: [
             [{ text: "👤 Telegram Profili", url: `tg://user?id=${uId}` }],
