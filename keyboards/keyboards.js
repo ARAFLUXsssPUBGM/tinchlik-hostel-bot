@@ -38,9 +38,9 @@ const adminMainKeyboard = {
 };
 
 module.exports = {
-  mainKeyboard,
+  mainKeyboard: kvartirantKeyboard, // Agar asosiy menyu shu bo'lsa
   kvartirantKeyboard,
   backKeyboard,
   paymentTypeKeyboard,
-  adminMainKeyboard
+  adminKeyboard // Mana shu yerga adminKeyboard deb yozing!
 };
