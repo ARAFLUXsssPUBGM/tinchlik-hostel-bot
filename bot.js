@@ -311,7 +311,7 @@ bot.on('message', async (msg) => {
     return;
   }
 
-  // --- REGISTRATION MACHINE ---
+// --- REGISTRATION MACHINE ---
   if (state.startsWith('REG_')) {
     try { await bot.deleteMessage(chatId, msg.message_id); } catch(e){}
     
@@ -344,11 +344,14 @@ bot.on('message', async (msg) => {
       if (text === "Erkak" || text === "Ayol") {
         sessions[chatId].regData.gender = text;
         pushState(chatId, 'REG_CHOOSE_VILOYAT');
+        
         const viloyatlar = Object.keys(db.hostel_structure || {});
         if (viloyatlar.length === 0) {
           sessions[chatId].state = 'MAIN_MENU';
           return await clearAndSend(chatId, "⚠️ Hozirda tizimda birorta ham viloyat yoki filial mavjud emas. Ma'murlar sozlashini kuting.", mainKeyboard);
         }
+        
+        // QAT'IY BUYRUQ: Viloyatlar ro'yxati Keyboard tugma shaklida
         const kbd = { keyboard: viloyatlar.map(v => [{ text: v }]), resize_keyboard: true };
         kbd.keyboard.push([{ text: "⬅️ Ortga qaytish" }]);
         await clearAndSend(chatId, "7. Viloyatni tanlang:", kbd);
@@ -358,10 +361,13 @@ bot.on('message', async (msg) => {
       if (db.hostel_structure && db.hostel_structure[text]) {
         sessions[chatId].regData.viloyat = text;
         pushState(chatId, 'REG_CHOOSE_FILIAL');
+        
         const filiallar = Object.keys(db.hostel_structure[text] || {});
         if (filiallar.length === 0) {
           return bot.sendMessage(chatId, "⚠️ Ushbu viloyatda xizmat ko'rsatuvchi filiallar yo'q. Boshqasini tanlang yoki ortga qayting.");
         }
+        
+        // QAT'IY BUYRUQ: Filiallar ro'yxati Keyboard tugma shaklida
         const kbd = { keyboard: filiallar.map(f => [{ text: f }]), resize_keyboard: true };
         kbd.keyboard.push([{ text: "⬅️ Ortga qaytish" }]);
         await clearAndSend(chatId, "Filialni tanlang:", kbd);
@@ -372,10 +378,13 @@ bot.on('message', async (msg) => {
       if (db.hostel_structure[vil] && db.hostel_structure[vil][text]) {
         sessions[chatId].regData.filial = text;
         pushState(chatId, 'REG_CHOOSE_XONA');
+        
         const xonalar = Object.keys(db.hostel_structure[vil][text] || {});
         if (xonalar.length === 0) {
           return bot.sendMessage(chatId, "⚠️ Ushbu filialda hali xonalar shakllantirilmagan.");
         }
+        
+        // QAT'IY BUYRUQ: Xonalar ro'yxati Keyboard tugma shaklida
         const kbd = { keyboard: xonalar.map(x => [{ text: x }]), resize_keyboard: true };
         kbd.keyboard.push([{ text: "⬅️ Ortga qaytish" }]);
         await clearAndSend(chatId, "Xonani tanlang:", kbd);
@@ -396,6 +405,7 @@ bot.on('message', async (msg) => {
           return bot.sendMessage(chatId, "⚠️ Kechirasiz, ushbu xonada barcha yotoq joylari band. Boshqa xona tanlang!");
         }
 
+        // QAT'IY BUYRUQ: Bo'sh yotoq joylari Keyboard tugma shaklida
         const kbd = { keyboard: boShYotoqlar.map(y => [{ text: y }]), resize_keyboard: true };
         kbd.keyboard.push([{ text: "⬅️ Ortga qaytish" }]);
         await clearAndSend(chatId, "Boʻsh yotoq joyini tanlang:", kbd);
@@ -472,7 +482,7 @@ bot.on('message', async (msg) => {
     }
     return;
   }
-
+  
   // --- KVARTIRANT DASHBOARD MANTIQLARI ---
   if (state === 'KVARTIRANT_MENU') {
     try { await bot.deleteMessage(chatId, msg.message_id); } catch(e){}
