@@ -1192,8 +1192,7 @@ async function sendMurojaatToAdmins(userId, photoId = null, textMsg = "") {
 // ==========================================
 // 1. ADMIN XABARLARINI TUTISH (bot.on('message'))
 // ==========================================
-bot.on('message', async (msg) => {
-  const chatId = msg.chat.id;
+
   const text = msg.text;
 
   // Faqat admin uchun ruxsat
@@ -1328,8 +1327,6 @@ bot.on('message', async (msg) => {
     const buttons = Object.keys(db.hostel_structure).map(v => [{ text: v, callback_data: `addyotoq_sel_vol_${v}` }]);
     return bot.sendMessage(chatId, "📍 Yotoq qo'shish uchun avval Viloyatni tanlang:", { reply_markup: { inline_keyboard: buttons } });
   }
-});
-
 
 // ==========================================
 // 2. INLINE TUGMALARNI QABUL QILISH (bot.on('callback_query'))
