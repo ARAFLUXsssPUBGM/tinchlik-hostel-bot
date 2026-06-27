@@ -962,7 +962,8 @@ if (state.startsWith('COMMENT_INPUT_')) {
     saveSessions();
     await clearAndSend(chatId, "📌 Eslatma o'rnatildi va guruhda dinamik ravishda yangilandi!", adminMainKeyboard);
   }
-}
+ }
+});
 
 // =======================================================================
 //          HOSTEL STRUKTURASI: INLINE CALLBACK TUGMALAR ISHLOVCHISI
