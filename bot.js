@@ -22,7 +22,7 @@ const fs = require('fs');
 const path = require('path');
 
 // ------------------- SOZLAMALAR VA TOKENLAR -------------------
-const TOKEN = 'SIZNING_BOT_TOKENINGIZNI_SHU_YERGA_YOZING';
+const TOKEN =  '8949142604:AAGqrksBXzXZqOiBPIP0EWLHFJPpSX9Tlmk';
 const MAIN_SUPER_ADMIN = 8485164743; // O'zingizning ID raqamingizni kiriting
 
 const bot = new TelegramBot(TOKEN, { polling: true });
