@@ -935,31 +935,34 @@ bot.on('message', async (msg) => {
       };
 }
     
-          // --- OMBOXONA/GURUHDA ADMIN TOMONIDAN MUTASADDI ESLATMA KIRITILGANDA ---
-  if (state.startsWith('COMMENT_INPUT_')) {
-    try { await bot.deleteMessage(chatId, msg.message_id); } catch(e){}
-    const targetUserId = state.split('_')[2];
-    if (db.kvartirantlar[targetUserId]) {
-      db.kvartirantlar[targetUserId].eslatma = text;
-      saveDB();
-      
-      const targetGroup = db.kvartirantlar[targetUserId].status === 'aktiv' ? db.settings.Aktiv_Guruh : db.settings.Qarz_Guruh;
-      const msgIdInGroup = db.kvartirantlar[targetUserId].groupMsgId;
-      
-      if (targetGroup && msgIdInGroup) {
-        const buildText = generateAnketaText(targetUserId);
-        const buildMarkup = generateAnketaInlineMarkup(targetUserId, db.kvartirantlar[targetUserId].status === 'aktiv' ? "group_active" : "group_active");
-        try {
-          // sendPhoto caption tahrirlash
-          await bot.editMessageCaption(buildText, { chat_id: targetGroup, message_id: msgIdInGroup, reply_markup: buildMarkup, parse_mode: 'HTML' });
-        } catch(e){}
-      }
-      
-      sessions[chatId].state = 'ADMIN_MAIN'; saveSessions();
-      await clearAndSend(chatId, "📌 Eslatma o'rnatildi va guruhda dinamik ravishda yangilandi!", adminMainKeyboard);
+// --- OMBOXONA/GURUHDA ADMIN TOMONIDAN MUTASADDI ESLATMA KIRITILGANDA ---
+if (state.startsWith('COMMENT_INPUT_')) {
+  try { 
+    await bot.deleteMessage(chatId, msg.message_id); 
+  } catch(e){}
+  
+  const targetUserId = state.split('_')[2];
+  if (db.kvartirantlar[targetUserId]) {
+    db.kvartirantlar[targetUserId].eslatma = text;
+    saveDB();
+    
+    const targetGroup = db.kvartirantlar[targetUserId].status === 'aktiv' ? db.settings.Aktiv_Guruh : db.settings.Qarz_Guruh;
+    const msgIdInGroup = db.kvartirantlar[targetUserId].groupMsgId;
+    
+    if (targetGroup && msgIdInGroup) {
+      const buildText = generateAnketaText(targetUserId);
+      const buildMarkup = generateAnketaInlineMarkup(targetUserId, db.kvartirantlar[targetUserId].status === 'aktiv' ? "group_active" : "group_active");
+      try {
+        // sendPhoto caption tahrirlash
+        await bot.editMessageCaption(buildText, { chat_id: targetGroup, message_id: msgIdInGroup, reply_markup: buildMarkup, parse_mode: 'HTML' });
+      } catch(e){}
     }
+    
+    sessions[chatId].state = 'ADMIN_MAIN'; 
+    saveSessions();
+    await clearAndSend(chatId, "📌 Eslatma o'rnatildi va guruhda dinamik ravishda yangilandi!", adminMainKeyboard);
   }
-});
+}
 
 // =======================================================================
 //          HOSTEL STRUKTURASI: INLINE CALLBACK TUGMALAR ISHLOVCHISI
