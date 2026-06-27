@@ -707,59 +707,95 @@ bot.on('message', async (msg) => {
       await clearAndSend(chatId, `✅ E'lon ${count} ta foydalanuvchiga yuborildi.`, adminMainKeyboard);
     }
     else if (state === 'ADMIN_ADD_CHOICE') {
+      db.adminNames = db.adminNames || {}; // Baza buzilmasligi uchun xavfsizlik tekshiruvi
       if (text === "➕ Yangi Admin Qo'shish") {
         pushState(chatId, 'ADMIN_INPUT_NEW_ID');
         await clearAndSend(chatId, "Qo'shmoqchi bo'lgan profilingizning Telegram CHAT ID raqamini yozing:", backKeyboard);
       } else {
-        const idMatch = text.match(/Admin ID: (\d+)/);
-        if (idMatch) {
-          const selectedAdminId = parseInt(idMatch[1], 10);
+        // Klaviatura tugmasidan kelgan ism bo'yicha Admin ID ni topish
+        let selectedAdminId = null;
+        for (let id of db.admins) {
+          let name = db.adminNames[id] || `Admin ID: ${id}`;
+          if (text === name) {
+            selectedAdminId = parseInt(id, 10);
+            break;
+          }
+        }
+
+        if (selectedAdminId) {
           sessions[chatId].selectedAdminId = selectedAdminId;
           pushState(chatId, 'ADMIN_MANAGE_ROLE');
           const isSuper = db.superAdmins.includes(selectedAdminId);
+          const adminName = db.adminNames[selectedAdminId] || `Admin ID: ${selectedAdminId}`;
           const roleKbd = {
             keyboard: [
               [isSuper ? { text: "🙅‍♂️ Bosh admin huquqini olish" } : { text: "👑 Bosh admin lavozimini berish" }],
-              [{ text: "🗑 Adminni o'chirish" }],
+              [{ text: "✏️ Ismini tahrirlash" }, { text: "🗑 Adminni o'chirish" }],
               [{ text: "⬅️ Ortga qaytish" }]
             ],
             resize_keyboard: true
           };
-          await clearAndSend(chatId, `Admin ID: ${selectedAdminId}\nLavozim: ${isSuper ? 'Super Admin' : 'Oddiy Admin'}\nAmalni tanlang:`, roleKbd);
+          await clearAndSend(chatId, `Admin: <b>${adminName}</b> (ID: ${selectedAdminId})\nLavozim: ${isSuper ? 'Oliy Admin' : 'Oddiy Admin'}\nAmalni tanlang:`, roleKbd);
+        } else {
+          await bot.sendMessage(chatId, "⚠️ Bunday ismdagi admin topilmadi. Qayta urinib ko'ring:");
         }
       }
     }
     else if (state === 'ADMIN_INPUT_NEW_ID') {
       const newAdminId = parseInt(text, 10);
       if (newAdminId) {
-        if (!db.admins.includes(newAdminId)) db.admins.push(newAdminId);
-        saveDB();
-        sessions[chatId].state = 'ADMIN_MAIN'; saveSessions();
-        await clearAndSend(chatId, `✅ Yangi Admin [ID: ${newAdminId}] qo'shildi.`, adminMainKeyboard);
+        sessions[chatId].tempNewAdminId = newAdminId;
+        pushState(chatId, 'ADMIN_INPUT_NEW_NAME');
+        await clearAndSend(chatId, `Yangi admin [ID: ${newAdminId}] uchun ism kiriting (Klaviatura tugmasida shu ism chiqadi):`, backKeyboard);
       } else {
         await bot.sendMessage(chatId, "⚠️ Noto'g'ri ID format. Faqat raqam kiriting:");
       }
+    }
+    else if (state === 'ADMIN_INPUT_NEW_NAME') {
+      const newAdminId = sessions[chatId].tempNewAdminId;
+      const adminName = text.trim();
+      
+      if (!db.admins.includes(newAdminId)) db.admins.push(newAdminId);
+      db.adminNames = db.adminNames || {};
+      db.adminNames[newAdminId] = adminName;
+      
+      saveDB();
+      sessions[chatId].state = 'ADMIN_MAIN'; saveSessions();
+      await clearAndSend(chatId, `✅ Yangi Admin <b>${adminName}</b> muvaffaqiyatli qo'shildi.`, adminMainKeyboard);
     }
     else if (state === 'ADMIN_MANAGE_ROLE') {
       const selId = sessions[chatId].selectedAdminId;
       if (text === "👑 Bosh admin lavozimini berish") {
         if (!db.superAdmins.includes(selId)) db.superAdmins.push(selId);
         saveDB(); sessions[chatId].state = 'ADMIN_MAIN'; saveSessions();
-        await clearAndSend(chatId, "✅ Super admin huquqi berildi!", adminMainKeyboard);
+        await clearAndSend(chatId, "✅ Oliy admin huquqi berildi!", adminMainKeyboard);
       } else if (text === "🙅‍♂️ Bosh admin huquqini olish") {
         if (selId === MAIN_SUPER_ADMIN) return bot.sendMessage(chatId, "⚠️ Asosiy tizim yaratuvchisidan huquqni olib bo'lmaydi!");
         db.superAdmins = db.superAdmins.filter(id => id !== selId);
         saveDB(); sessions[chatId].state = 'ADMIN_MAIN'; saveSessions();
-        await clearAndSend(chatId, "✅ Super admin huquqi olindi.", adminMainKeyboard);
+        await clearAndSend(chatId, "✅ Oliy admin huquqi olindi.", adminMainKeyboard);
+      } else if (text === "✏️ Ismini tahrirlash") {
+        pushState(chatId, 'ADMIN_EDIT_NAME');
+        await clearAndSend(chatId, "Adminning yangi ismini kiriting:", backKeyboard);
       } else if (text === "🗑 Adminni o'chirish") {
         if (selId === MAIN_SUPER_ADMIN) return bot.sendMessage(chatId, "⚠️ Asosiy adminni o'chirish taqiqlanadi!");
         db.admins = db.admins.filter(id => id !== selId);
         db.superAdmins = db.superAdmins.filter(id => id !== selId);
+        if (db.adminNames && db.adminNames[selId]) delete db.adminNames[selId];
         saveDB(); sessions[chatId].state = 'ADMIN_MAIN'; saveSessions();
         await clearAndSend(chatId, "✅ Admin muvaffaqiyatli o'chirildi.", adminMainKeyboard);
       }
     }
-
+    else if (state === 'ADMIN_EDIT_NAME') {
+      const selId = sessions[chatId].selectedAdminId;
+      const newName = text.trim();
+      db.adminNames = db.adminNames || {};
+      db.adminNames[selId] = newName;
+      saveDB();
+      sessions[chatId].state = 'ADMIN_MAIN'; saveSessions();
+      await clearAndSend(chatId, `✅ Admin ismi <b>${newName}</b> ga muvaffaqiyatli o'zgartirildi!`, adminMainKeyboard);
+            }
+      
     // ========================================================================
     //               XATOLIKLAR TUZATILGAN STRUKTURA MATRIXI
     // ========================================================================
