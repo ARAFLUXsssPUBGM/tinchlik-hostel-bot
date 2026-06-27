@@ -639,13 +639,16 @@ bot.on('message', async (msg) => {
       else if (text === "👮‍♂️ Admin qoʻshish") {
         pushState(chatId, 'ADMIN_ADD_CHOICE');
         let kbd = { keyboard: [], resize_keyboard: true };
+        db.adminNames = db.adminNames || {}; // Yangi bazaviy ulanish
         db.admins.forEach(admId => {
-          kbd.keyboard.push([{ text: `Admin ID: ${admId}` }]);
+          // Agar ism kiritilgan bo'lsa ismini, yo'q bo'lsa ID sini chiqaradi
+          let displayName = db.adminNames[admId] || `Admin ID: ${admId}`; 
+          kbd.keyboard.push([{ text: displayName }]);
         });
         kbd.keyboard.push([{ text: "➕ Yangi Admin Qo'shish" }]);
         kbd.keyboard.push([{ text: "⬅️ Ortga qaytish" }]);
-        await clearAndSend(chatId, "👮‍♂️ Adminlarni boshqarish paneli. Kerakli ID'ni tanlang yoki yangisini qo'shing:", kbd);
-      }
+        await clearAndSend(chatId, "👮‍♂️ Adminlarni boshqarish paneli. Kerakli Adminni tanlang yoki yangisini qo'shing:", kbd);
+    }
       else if (text === "🏨 HOSTEL Sozlash") {
         pushState(chatId, 'ADMIN_HOSTEL_STRUCT');
         const kbd = {
