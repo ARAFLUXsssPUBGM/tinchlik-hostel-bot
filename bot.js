@@ -11,7 +11,7 @@ app.get('/', (req, res) => res.send('Hostel CRM Bot Ishlamoqda!'));
 app.listen(PORT, () => console.log(`Server ${PORT}-portda yondi.`));
 
 // --- SOZLAMALAR ---
-const TOKEN = 'SIZNING_BOT_TOKENINGIZ'; // Tokenni kiriting
+const TOKEN = '8949142604:AAHERMT6uleHZMlHgNDSov3nW4L2R0PMqj8'; // Tokenni kiriting
 const bot = new TelegramBot(TOKEN, { polling: true });
 
 // Baza fayllari
