@@ -27,7 +27,7 @@ const fs = require('fs');
 const path = require('path');
 
 // ------------------- SOZLAMALAR VA TOKENLAR -------------------
-const TOKEN = '8949142604:AAGqrksBXzXZqOiBPIP0EWLHFJPpSX9Tlmk';
+const TOKEN = '8949142604:AAHERMT6uleHZMlHgNDSov3nW4L2R0PMqj8';
 const MAIN_SUPER_ADMIN = 8485164743; 
 
 const bot = new TelegramBot(TOKEN, { polling: true });
