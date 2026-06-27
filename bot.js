@@ -1285,6 +1285,7 @@ bot.on('callback_query', async (query) => {
        bot.editMessageText(`🗑 <b>${yot}</b> tozalab tashlandi!`, { chat_id: chatId, message_id: query.message.message_id, parse_mode: 'HTML' });
        return bot.answerCallbackQuery(query.id, { text: "Yotoq muvaffaqiyatli o'chirildi!" });
     }
+      }
   
   if (data === 'confirm_viloyat_yes') {
     const regionName = sessions[chatId]?.tempRegionName;
