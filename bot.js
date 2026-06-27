@@ -114,7 +114,8 @@ function formatDate(date) {
 }
 
 // Chat tozaligini ta'minlash: Eski xabarlarni xavfsiz o'chirish va yangisini yuborish
-async function clearAndSend(chatId, text, replyMarkup) {
+async function clearAndSend(chatId, text, replyMarkup, isMainMenu = false) {
+  // Oddiy (mayda-chuyda) xabarlarni tozalash
   if (sessions[chatId] && sessions[chatId].lastMessageIds) {
     for (let msgId of sessions[chatId].lastMessageIds) {
       try { await bot.deleteMessage(chatId, msgId); } catch (e) {}
@@ -127,7 +128,14 @@ async function clearAndSend(chatId, text, replyMarkup) {
 
   try {
     const sentMsg = await bot.sendMessage(chatId, text, { reply_markup: replyMarkup, parse_mode: 'HTML' });
-    sessions[chatId].lastMessageIds.push(sentMsg.message_id);
+    
+    // Agar bu Asosiy menyu (/start yoki /admin) bo'lsa:
+    if (isMainMenu) {
+      sessions[chatId].mainMenuBotMsgId = sentMsg.message_id; // Himoyalangan xabar sifatida saqlaymiz
+    } else {
+      // Agar oddiy xabar bo'lsa, keyin o'chirilishi uchun ro'yxatga qo'shamiz
+      sessions[chatId].lastMessageIds.push(sentMsg.message_id);
+    }
     saveSessions();
   } catch (e) {
     console.error(`❌ Chat ${chatId} ga xabar yuborish muvaffaqiyatsiz tugadi:`, e);
@@ -200,32 +208,59 @@ const paymentTypeKeyboard = {
 // ------------------- BOT START BUYRUG'I -------------------
 bot.onText(/\/start/, async (msg) => {
   const chatId = msg.chat.id;
-  sessions[chatId] = { history: [], lastMessageIds: sessions[chatId]?.lastMessageIds || [] };
-  
-  try { await bot.deleteMessage(chatId, msg.message_id); } catch(e){}
+  if (!sessions[chatId]) sessions[chatId] = { history: [], lastMessageIds: [] };
+  sessions[chatId].history = [];
+
+  // O'ZARO ALMASHISH QOIDASI: Eski /start yoki /admin menyusi va user buyrug'ini o'chirish
+  if (sessions[chatId].mainMenuUserMsgId) {
+    try { await bot.deleteMessage(chatId, sessions[chatId].mainMenuUserMsgId); } catch(e){}
+  }
+  if (sessions[chatId].mainMenuBotMsgId) {
+    try { await bot.deleteMessage(chatId, sessions[chatId].mainMenuBotMsgId); } catch(e){}
+  }
+
+  // Hozirgi yozilgan /start buyrug'ining ID sini saqlab qolamiz (o'chib ketmasligi uchun)
+  sessions[chatId].mainMenuUserMsgId = msg.message_id;
 
   if (db.kvartirantlar[chatId] && (db.kvartirantlar[chatId].status === 'aktiv' || db.kvartirantlar[chatId].status === 'qarz')) {
     const filial = db.kvartirantlar[chatId].filial || "HOSTEL";
     pushState(chatId, 'KVARTIRANT_MENU');
-    await clearAndSend(chatId, `Assalomu alaykum <b>${filial}</b> Profilingizga xush kelibsiz...❕`, kvartirantKeyboard);
+    // isMainMenu = true parametri berildi
+    await clearAndSend(chatId, `Assalomu alaykum <b>${filial}</b> Profilingizga xush kelibsiz...❕`, kvartirantKeyboard, true);
   } else {
     pushState(chatId, 'MAIN_MENU');
-    await clearAndSend(chatId, "<b>Tinchlik HOSTEL</b> tizimiga xush kelibsiz! Quyidagi tugmalardan birini tanlang:", mainKeyboard);
+    // isMainMenu = true parametri berildi
+    await clearAndSend(chatId, "<b>Tinchlik HOSTEL</b> tizimiga xush kelibsiz! Quyidagi tugmalardan birini tanlang:", mainKeyboard, true);
   }
 });
 
 // Admin panelga kirish
 bot.onText(/\/admin/, async (msg) => {
   const chatId = msg.chat.id;
-  try { await bot.deleteMessage(chatId, msg.message_id); } catch(e){}
 
   if (!db.admins.includes(chatId)) {
+    // Agar admin bo'lmasa, uni buyrug'ini o'chirib xabar beramiz
+    try { await bot.deleteMessage(chatId, msg.message_id); } catch(e){}
     return bot.sendMessage(chatId, "Kechirasiz hurmatli foydalanuvchi Siz Admin paneliga kirish huquqiga ega emassiz...!");
   }
 
-  sessions[chatId] = { history: [], lastMessageIds: sessions[chatId]?.lastMessageIds || [] };
+  if (!sessions[chatId]) sessions[chatId] = { history: [], lastMessageIds: [] };
+  sessions[chatId].history = [];
+
+  // O'ZARO ALMASHISH QOIDASI: Eski /start yoki /admin menyusi va user buyrug'ini o'chirish
+  if (sessions[chatId].mainMenuUserMsgId) {
+    try { await bot.deleteMessage(chatId, sessions[chatId].mainMenuUserMsgId); } catch(e){}
+  }
+  if (sessions[chatId].mainMenuBotMsgId) {
+    try { await bot.deleteMessage(chatId, sessions[chatId].mainMenuBotMsgId); } catch(e){}
+  }
+
+  // Hozirgi yozilgan /admin buyrug'ining ID sini saqlab qolamiz
+  sessions[chatId].mainMenuUserMsgId = msg.message_id;
+
   pushState(chatId, 'ADMIN_MAIN');
-  await clearAndSend(chatId, "👑 <b>Admin paneliga xush kelibsiz!</b>\nBarcha tizim boshqaruv elementlari quyida joylashgan:", adminMainKeyboard);
+  // isMainMenu = true parametri berildi
+  await clearAndSend(chatId, "👑 <b>Admin paneliga xush kelibsiz!</b>\nBarcha tizim boshqaruv elementlari quyida joylashgan:", adminMainKeyboard, true);
 });
 
 // Omborxona / Guruh sozlash komandalari
