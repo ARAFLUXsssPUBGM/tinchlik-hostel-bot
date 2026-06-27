@@ -798,271 +798,143 @@ bot.on('message', async (msg) => {
       sessions[chatId].state = 'ADMIN_MAIN'; saveSessions();
       await clearAndSend(chatId, `✅ Admin ismi <b>${newName}</b> ga muvaffaqiyatli o'zgartirildi!`, adminMainKeyboard);
             }
-      
-    // ========================================================================
+
+    // =======================================================================
     //               XATOLIKLAR TUZATILGAN STRUKTURA MATRIXI
     // ========================================================================
     else if (state === 'ADMIN_HOSTEL_STRUCT') {
+      sessions[chatId].tempStruct = {}; 
+      sessions[chatId].tempOptions = [];
+
+      const keys = Object.keys(db.hostel_structure || {});
+
       if (text === "➕ Viloyat qo'shish") {
         pushState(chatId, 'STRUCT_ADD_VILOYAT');
-        await clearAndSend(chatId, "Yangi viloyat nomini kiriting (Masalan: Toshkent):", backKeyboard);
+        await clearAndSend(chatId, "Iltimos, Kiritmoqchi boʻlgan Viloyatingiz nomini chatga yozib yuboring:", backKeyboard);
       } 
       else if (text === "🗑 Viloyatni o'chirish") {
-        const keys = Object.keys(db.hostel_structure || {});
         if (keys.length === 0) return bot.sendMessage(chatId, "Bazada o'chirish uchun viloyat yo'q!");
-        pushState(chatId, 'STRUCT_DEL_VILOYAT');
-        const kbd = { keyboard: keys.map(v => [{ text: v }]), resize_keyboard: true };
-        kbd.keyboard.push([{ text: "⬅️ Ortga qaytish" }]);
-        await clearAndSend(chatId, "O'chiriladigan viloyatni tanlang (Diqqat: Ichidagi barcha filiallar o'chadi!):", kbd);
+        sessions[chatId].tempOptions = keys;
+        const kbd = { inline_keyboard: keys.map((v, i) => [{ text: v, callback_data: `dv_v_${i}` }]) };
+        await bot.sendMessage(chatId, "👇 Harakatni davom ettiring:", { reply_markup: backKeyboard });
+        await clearAndSend(chatId, "Oʻchirish kerak boʻlgan viloyatni tanlang:", kbd);
       } 
       else if (text === "➕ Filial qo'shish") {
-        const keys = Object.keys(db.hostel_structure || {});
         if (keys.length === 0) return bot.sendMessage(chatId, "Avval viloyat qo'shing!");
-        pushState(chatId, 'STRUCT_ADD_FILIAL_VIL');
-        const kbd = { keyboard: keys.map(v => [{ text: v }]), resize_keyboard: true };
-        kbd.keyboard.push([{ text: "⬅️ Ortga qaytish" }]);
-        await clearAndSend(chatId, "Qaysi viloyatga filial qo'shmoqchisiz?", kbd);
+        sessions[chatId].tempOptions = keys;
+        const kbd = { inline_keyboard: keys.map((v, i) => [{ text: v, callback_data: `af_v_${i}` }]) };
+        await bot.sendMessage(chatId, "👇 Harakatni davom ettiring:", { reply_markup: backKeyboard });
+        await clearAndSend(chatId, "Filiall Kiritmoqchi boʻlgan Viloyatingizdi tanlang:", kbd);
       } 
       else if (text === "🗑 Filialni o'chirish") {
-        const keys = Object.keys(db.hostel_structure || {});
         if (keys.length === 0) return bot.sendMessage(chatId, "Tizimda viloyatlar mavjud emas!");
-        pushState(chatId, 'STRUCT_DEL_FILIAL_VIL');
-        const kbd = { keyboard: keys.map(v => [{ text: v }]), resize_keyboard: true };
-        kbd.keyboard.push([{ text: "⬅️ Ortga qaytish" }]);
-        await clearAndSend(chatId, "Filial o'chirish uchun avval viloyatni tanlang:", kbd);
+        sessions[chatId].tempOptions = keys;
+        const kbd = { inline_keyboard: keys.map((v, i) => [{ text: v, callback_data: `df_v_${i}` }]) };
+        await bot.sendMessage(chatId, "👇 Harakatni davom ettiring:", { reply_markup: backKeyboard });
+        await clearAndSend(chatId, "Oʻchirilishi kerak boʻlgan Filiall Viloyatini tanlang:", kbd);
       } 
       else if (text === "➕ Xona qo'shish") {
-        const keys = Object.keys(db.hostel_structure || {});
         if (keys.length === 0) return bot.sendMessage(chatId, "Viloyat mavjud emas!");
-        pushState(chatId, 'STRUCT_ADD_XONA_VIL');
-        const kbd = { keyboard: keys.map(v => [{ text: v }]), resize_keyboard: true };
-        kbd.keyboard.push([{ text: "⬅️ Ortga qaytish" }]);
-        await clearAndSend(chatId, "Xona qo'shish uchun viloyatni tanlang:", kbd);
+        sessions[chatId].tempOptions = keys;
+        const kbd = { inline_keyboard: keys.map((v, i) => [{ text: v, callback_data: `ax_v_${i}` }]) };
+        await bot.sendMessage(chatId, "👇 Harakatni davom ettiring:", { reply_markup: backKeyboard });
+        await clearAndSend(chatId, "Xona kiritmoqchi boʻlgan Viloyatingizdi tanlang:", kbd);
       } 
       else if (text === "🗑 Xonani o'chirish") {
-        const keys = Object.keys(db.hostel_structure || {});
-        pushState(chatId, 'STRUCT_DEL_XONA_VIL');
-        const kbd = { keyboard: keys.map(v => [{ text: v }]), resize_keyboard: true };
-        kbd.keyboard.push([{ text: "⬅️ Ortga qaytish" }]);
-        await clearAndSend(chatId, "Xona o'chirish uchun viloyatni tanlang:", kbd);
+        if (keys.length === 0) return bot.sendMessage(chatId, "Viloyat mavjud emas!");
+        sessions[chatId].tempOptions = keys;
+        const kbd = { inline_keyboard: keys.map((v, i) => [{ text: v, callback_data: `dx_v_${i}` }]) };
+        await bot.sendMessage(chatId, "👇 Harakatni davom ettiring:", { reply_markup: backKeyboard });
+        await clearAndSend(chatId, "Oʻchirilishi kerak boʻlgan Xonaning Viloyatini tanlang:", kbd);
       } 
       else if (text === "➕ Yotoq qo'shish") {
-        const keys = Object.keys(db.hostel_structure || {});
-        pushState(chatId, 'STRUCT_ADD_YOTOQ_VIL');
-        const kbd = { keyboard: keys.map(v => [{ text: v }]), resize_keyboard: true };
-        kbd.keyboard.push([{ text: "⬅️ Ortga qaytish" }]);
-        await clearAndSend(chatId, "Yotoq joyi qo'shish uchun viloyatni tanlang:", kbd);
+        if (keys.length === 0) return bot.sendMessage(chatId, "Viloyat mavjud emas!");
+        sessions[chatId].tempOptions = keys;
+        const kbd = { inline_keyboard: keys.map((v, i) => [{ text: v, callback_data: `ay_v_${i}` }]) };
+        await bot.sendMessage(chatId, "👇 Harakatni davom ettiring:", { reply_markup: backKeyboard });
+        await clearAndSend(chatId, "Yotoq kiritmoqchi boʻlgan Viloyatingizdi tanlang:", kbd);
       } 
       else if (text === "🗑 Yotoqni o'chirish") {
-        const keys = Object.keys(db.hostel_structure || {});
-        pushState(chatId, 'STRUCT_DEL_YOTOQ_VIL');
-        const kbd = { keyboard: keys.map(v => [{ text: v }]), resize_keyboard: true };
-        kbd.keyboard.push([{ text: "⬅️ Ortga qaytish" }]);
-        await clearAndSend(chatId, "Yotoq o'chirish uchun viloyatni tanlang:", kbd);
+        if (keys.length === 0) return bot.sendMessage(chatId, "Viloyat mavjud emas!");
+        sessions[chatId].tempOptions = keys;
+        const kbd = { inline_keyboard: keys.map((v, i) => [{ text: v, callback_data: `dy_v_${i}` }]) };
+        await bot.sendMessage(chatId, "👇 Harakatni davom ettiring:", { reply_markup: backKeyboard });
+        await clearAndSend(chatId, "Oʻchirilishi kerak boʻlgan Yotoqning Viloyatini tanlang:", kbd);
       }
       return;
     }
     
-if (state === 'STRUCT_ADD_VILOYAT') {
-  const regionName = text.trim();
-  
-  // Noto'g'ri buyruqlar yoki belgilarni tekshirish (filtr)
-  if (regionName.length < 2 || regionName.startsWith('/') || regionName.includes('back')) {
-    return bot.sendMessage(chatId, "⚠️ Noto'g'ri nom! Iltimos, viloyat nomini to'g'ri matn shaklida qaytadan kiriting:");
-  }
-
-  // Ma'lumotni vaqtincha saqlab turish
-  if (!sessions[chatId]) sessions[chatId] = {};
-  sessions[chatId].tempRegionName = regionName;
-  sessions[chatId].state = 'STRUCT_CONFIRM_VILOYAT'; // Holatni tasdiqlash rejimiga o'tkazamiz
-  saveSessions();
-
-  // Inline tugma dizayni
-  const inlineKeyboard = {
-    inline_keyboard: [
-      [
-        { text: "✅ Ha, qo'shilsin", callback_data: "confirm_viloyat_yes" },
-        { text: "❌ Bekor qilish", callback_data: "confirm_viloyat_no" }
-      ]
-    ]
-  };
-
-  await bot.sendMessage(chatId, `❓ Tizimga yangi viloyat qo'shishni tasdiqlaysizmi?\n\nViloyat nomi: <b>${regionName}</b>`, {
-    reply_markup: inlineKeyboard,
-    parse_mode: 'HTML'
-  });
-  return;
-}
-    else if (state === 'STRUCT_DEL_VILOYAT') {
-      if (db.hostel_structure && db.hostel_structure[text]) {
-        delete db.hostel_structure[text]; saveDB();
+    // --- MATN KIRITISH HOLATLARI ---
+    if (state === 'STRUCT_ADD_VILOYAT') {
+      const regionName = text.trim();
+      if (regionName.length < 2 || regionName.startsWith('/')) {
+        return bot.sendMessage(chatId, "⚠️ Noto'g'ri nom! Iltimos, qaytadan kiriting:");
       }
-      sessions[chatId].state = 'ADMIN_MAIN'; saveSessions();
-      await clearAndSend(chatId, `🗑 Viloyat va uning ichidagi barcha ob'ektlar o'chirildi.`, adminMainKeyboard);
-    }
-    else if (state === 'STRUCT_ADD_FILIAL_VIL') {
-      sessions[chatId].tempStruct = { viloyat: text };
-      pushState(chatId, 'STRUCT_ADD_FILIAL_NAME');
-      await clearAndSend(chatId, `"${text}" viloyati uchun yangi Filial nomini kiriting:`, backKeyboard);
+      if (!db.hostel_structure) db.hostel_structure = {};
+      if (!db.hostel_structure[regionName]) db.hostel_structure[regionName] = {};
+      saveDB();
+      sessions[chatId].state = 'ADMIN_HOSTEL_STRUCT'; saveSessions();
+      await clearAndSend(chatId, `✅ <b>${regionName}</b> viloyati obyekti sifatida HOSTEL bazasiga qoʻshildi.`, getHostelStructKeyboard());
+      return;
     }
     else if (state === 'STRUCT_ADD_FILIAL_NAME') {
-      const vil = sessions[chatId].tempStruct.viloyat;
+      const vil = sessions[chatId].tempStruct.vil;
       const filialName = text.trim();
-      if (db.hostel_structure[vil]) {
-        if (!db.hostel_structure[vil][filialName]) db.hostel_structure[vil][filialName] = {};
-        saveDB();
-      }
-      sessions[chatId].state = 'ADMIN_MAIN'; saveSessions();
-      await clearAndSend(chatId, `✅ Filial "${filialName}" muvaffaqiyatli yaratildi.`, adminMainKeyboard);
-    }
-    else if (state === 'STRUCT_DEL_FILIAL_VIL') {
-      sessions[chatId].tempStruct = { viloyat: text };
-      pushState(chatId, 'STRUCT_DEL_FILIAL_NAME');
-      const filials = Object.keys(db.hostel_structure[text] || {});
-      const kbd = { keyboard: filials.map(f => [{ text: f }]), resize_keyboard: true };
-      kbd.keyboard.push([{ text: "⬅️ Ortga qaytish" }]);
-      await clearAndSend(chatId, "O'chiriladigan filialni belgilang:", kbd);
-    }
-    else if (state === 'STRUCT_DEL_FILIAL_NAME') {
-      const vil = sessions[chatId].tempStruct.viloyat;
-      if (db.hostel_structure[vil] && db.hostel_structure[vil][text]) {
-        delete db.hostel_structure[vil][text]; saveDB();
-      }
-      sessions[chatId].state = 'ADMIN_MAIN'; saveSessions();
-      await clearAndSend(chatId, `🗑 Filial tizimdan to'liq tozalab tashlandi.`, adminMainKeyboard);
-    }
-    else if (state === 'STRUCT_ADD_XONA_VIL') {
-      sessions[chatId].tempStruct = { viloyat: text };
-      pushState(chatId, 'STRUCT_ADD_XONA_FIL');
-      const filials = Object.keys(db.hostel_structure[text] || {});
-      const kbd = { keyboard: filials.map(f => [{ text: f }]), resize_keyboard: true };
-      await clearAndSend(chatId, "Filialni tanlang:", kbd);
-    }
-    else if (state === 'STRUCT_ADD_XONA_FIL') {
-      sessions[chatId].tempStruct.filial = text;
-      pushState(chatId, 'STRUCT_ADD_XONA_NAME');
-      await clearAndSend(chatId, "Xona raqami yoki nomini kiriting (Masalan: 104-xona):", backKeyboard);
+      if (!db.hostel_structure[vil][filialName]) db.hostel_structure[vil][filialName] = {};
+      saveDB();
+      sessions[chatId].state = 'ADMIN_HOSTEL_STRUCT'; saveSessions();
+      await clearAndSend(chatId, `✅ <b>${filialName}</b> filiali bazaga qo'shildi.`, getHostelStructKeyboard());
+      return;
     }
     else if (state === 'STRUCT_ADD_XONA_NAME') {
-      const vil = sessions[chatId].tempStruct.viloyat;
-      const fil = sessions[chatId].tempStruct.filial;
+      const vil = sessions[chatId].tempStruct.vil;
+      const fil = sessions[chatId].tempStruct.fil;
       const roomName = text.trim();
-      if (db.hostel_structure[vil] && db.hostel_structure[vil][fil]) {
-        if (!db.hostel_structure[vil][fil][roomName]) db.hostel_structure[vil][fil][roomName] = {};
-        saveDB();
-      }
-      sessions[chatId].state = 'ADMIN_MAIN'; saveSessions();
-      await clearAndSend(chatId, `✅ Xona "${roomName}" omborga qo'shildi.`, adminMainKeyboard);
-    }
-    else if (state === 'STRUCT_DEL_XONA_VIL') {
-      sessions[chatId].tempStruct = { viloyat: text };
-      pushState(chatId, 'STRUCT_DEL_XONA_FIL');
-      const filials = Object.keys(db.hostel_structure[text] || {});
-      const kbd = { keyboard: filials.map(f => [{ text: f }]), resize_keyboard: true };
-      await clearAndSend(chatId, "Filialni tanlang:", kbd);
-    }
-    else if (state === 'STRUCT_DEL_XONA_FIL') {
-      const vil = sessions[chatId].tempStruct.viloyat;
-      sessions[chatId].tempStruct.filial = text;
-      pushState(chatId, 'STRUCT_DEL_XONA_NAME');
-      const xonalar = Object.keys(db.hostel_structure[vil][text] || {});
-      const kbd = { keyboard: xonalar.map(x => [{ text: x }]), resize_keyboard: true };
-      await clearAndSend(chatId, "O'chiriladigan xonani belgilang:", kbd);
-    }
-    else if (state === 'STRUCT_DEL_XONA_NAME') {
-      const vil = sessions[chatId].tempStruct.viloyat;
-      const fil = sessions[chatId].tempStruct.filial;
-      if (db.hostel_structure[vil] && db.hostel_structure[vil][fil]) {
-        delete db.hostel_structure[vil][fil][text]; saveDB();
-      }
-      sessions[chatId].state = 'ADMIN_MAIN'; saveSessions();
-      await clearAndSend(chatId, `🗑 Xona o'chirildi.`, adminMainKeyboard);
-    }
-    else if (state === 'STRUCT_ADD_YOTOQ_VIL') {
-      sessions[chatId].tempStruct = { viloyat: text };
-      pushState(chatId, 'STRUCT_ADD_YOTOQ_FIL');
-      const filials = Object.keys(db.hostel_structure[text] || {});
-      const kbd = { keyboard: filials.map(f => [{ text: f }]), resize_keyboard: true };
-      await clearAndSend(chatId, "Filialni bosing:", kbd);
-    }
-    else if (state === 'STRUCT_ADD_YOTOQ_FIL') {
-      const vil = sessions[chatId].tempStruct.viloyat;
-      sessions[chatId].tempStruct.filial = text;
-      pushState(chatId, 'STRUCT_ADD_YOTOQ_XON');
-      const xonalar = Object.keys(db.hostel_structure[vil][text] || {});
-      const kbd = { keyboard: xonalar.map(x => [{ text: x }]), resize_keyboard: true };
-      await clearAndSend(chatId, "Xonani tanlang:", kbd);
-    }
-    else if (state === 'STRUCT_ADD_YOTOQ_XON') {
-      sessions[chatId].tempStruct.xona = text;
-      pushState(chatId, 'STRUCT_ADD_YOTOQ_NAME');
-      await clearAndSend(chatId, "Yotoq joy nomini yozing (Masalan: 1-yotoq (A)):", backKeyboard);
+      if (!db.hostel_structure[vil][fil][roomName]) db.hostel_structure[vil][fil][roomName] = {};
+      saveDB();
+      sessions[chatId].state = 'ADMIN_HOSTEL_STRUCT'; saveSessions();
+      await clearAndSend(chatId, `✅ <b>${roomName}</b> xonasi bazaga qo'shildi.`, getHostelStructKeyboard());
+      return;
     }
     else if (state === 'STRUCT_ADD_YOTOQ_NAME') {
       sessions[chatId].tempStruct.yotoqName = text.trim();
       pushState(chatId, 'STRUCT_ADD_YOTOQ_PRICE');
-      await clearAndSend(chatId, "Ushbu yotoq joyi uchun OYLIK IJARA narxini faqat raqamlarda kiriting:", backKeyboard);
+      await clearAndSend(chatId, "Yotoq joyning Oylik narxini Raqamlar bilan yozib chatga yuboring:", backKeyboard);
+      return;
     }
     else if (state === 'STRUCT_ADD_YOTOQ_PRICE') {
       const priceNum = parseMoney(text);
       if (priceNum > 0) {
-        const vil = sessions[chatId].tempStruct.viloyat;
-        const fil = sessions[chatId].tempStruct.filial;
-        const xon = sessions[chatId].tempStruct.xona;
+        const vil = sessions[chatId].tempStruct.vil;
+        const fil = sessions[chatId].tempStruct.fil;
+        const xon = sessions[chatId].tempStruct.xon;
         const yot = sessions[chatId].tempStruct.yotoqName;
 
-        if (!db.hostel_structure[vil]) db.hostel_structure[vil] = {};
-        if (!db.hostel_structure[vil][fil]) db.hostel_structure[vil][fil] = {};
-        if (!db.hostel_structure[vil][fil][xon]) db.hostel_structure[vil][fil][xon] = {};
-
-        db.hostel_structure[vil][fil][xon][yot] = {
-          price: priceNum,
-          isFree: true
-        };
+        if (!db.hostel_structure[vil][fil][xon][yot]) {
+          db.hostel_structure[vil][fil][xon][yot] = { price: priceNum, isFree: true };
+        }
         saveDB();
-        sessions[chatId].state = 'ADMIN_MAIN'; saveSessions();
-        await clearAndSend(chatId, `✅ Joy va uning narxi mukammal o'rnatildi!\n<b>Struktura:</b> ${vil} -> ${fil} -> ${xon} -> ${yot}\nNarxi: <b>${formatMoney(priceNum)}</b>`, adminMainKeyboard);
+        sessions[chatId].state = 'ADMIN_HOSTEL_STRUCT'; saveSessions();
+        await clearAndSend(chatId, `✅ Yotoq joyi bazaga qo'shildi va Oylik narxi biriktirildi!\nNarxi: <b>${formatMoney(priceNum)}</b>`, getHostelStructKeyboard());
       } else {
-        await bot.sendMessage(chatId, "⚠️ Narx xato kiritildi, faqat musbat raqam kiriting:");
+        await bot.sendMessage(chatId, "⚠️ Narx xato kiritildi, faqat raqam kiriting:");
       }
+      return;
     }
-    else if (state === 'STRUCT_DEL_YOTOQ_VIL') {
-      sessions[chatId].tempStruct = { viloyat: text };
-      pushState(chatId, 'STRUCT_DEL_YOTOQ_FIL');
-      const filials = Object.keys(db.hostel_structure[text] || {});
-      const kbd = { keyboard: filials.map(f => [{ text: f }]), resize_keyboard: true };
-      await clearAndSend(chatId, "Filialni belgilang:", kbd);
-    }
-    else if (state === 'STRUCT_DEL_YOTOQ_FIL') {
-      const vil = sessions[chatId].tempStruct.viloyat;
-      sessions[chatId].tempStruct.filial = text;
-      pushState(chatId, 'STRUCT_DEL_YOTOQ_XON');
-      const xonalar = Object.keys(db.hostel_structure[vil][text] || {});
-      const kbd = { keyboard: xonalar.map(x => [{ text: x }]), resize_keyboard: true };
-      await clearAndSend(chatId, "Xonani belgilang:", kbd);
-    }
-    else if (state === 'STRUCT_DEL_YOTOQ_XON') {
-      const vil = sessions[chatId].tempStruct.viloyat;
-      const fil = sessions[chatId].tempStruct.filial;
-      sessions[chatId].tempStruct.xona = text;
-      pushState(chatId, 'STRUCT_DEL_YOTOQ_NAME');
-      const yotoqlar = Object.keys(db.hostel_structure[vil][fil][text] || {});
-      const kbd = { keyboard: yotoqlar.map(y => [{ text: y }]), resize_keyboard: true };
-      await clearAndSend(chatId, "O'chiriladigan yotoqni tanlang:", kbd);
-    }
-    else if (state === 'STRUCT_DEL_YOTOQ_NAME') {
-      const vil = sessions[chatId].tempStruct.viloyat;
-      const fil = sessions[chatId].tempStruct.filial;
-      const xon = sessions[chatId].tempStruct.xona;
-      if (db.hostel_structure[vil] && db.hostel_structure[vil][fil] && db.hostel_structure[vil][fil][xon]) {
-        delete db.hostel_structure[vil][fil][xon][text]; saveDB();
-      }
-      sessions[chatId].state = 'ADMIN_MAIN'; saveSessions();
-      await clearAndSend(chatId, "🗑 Yotoq joyi arxitekturadan o'chirildi.", adminMainKeyboard);
-    }
-    return;
-  }
 
+    // Yordamchi klaviatura funksiyasi
+    function getHostelStructKeyboard() {
+      return {
+        keyboard: [
+          [{ text: "➕ Viloyat qo'shish" }, { text: "🗑 Viloyatni o'chirish" }],
+          [{ text: "➕ Filial qo'shish" }, { text: "🗑 Filialni o'chirish" }],
+          [{ text: "➕ Xona qo'shish" }, { text: "🗑 Xonani o'chirish" }],
+          [{ text: "➕ Yotoq qo'shish" }, { text: "🗑 Yotoqni o'chirish" }],
+          [{ text: "⬅️ Ortga qaytish" }]
+        ], resize_keyboard: true
+      };
+}
+    
           // --- OMBOXONA/GURUHDA ADMIN TOMONIDAN MUTASADDI ESLATMA KIRITILGANDA ---
   if (state.startsWith('COMMENT_INPUT_')) {
     try { await bot.deleteMessage(chatId, msg.message_id); } catch(e){}
