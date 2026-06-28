@@ -1,1 +1,15 @@
-// node-telegram-bot-api, express, node-cron kutubxonalari ro'yxati
+{
+  "name": "tinchlik-hostel-bot",
+  "version": "1.0.0",
+  "description": "Tinchlik Hostel - Advanced CRM Bot",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "node-cron": "^3.0.2",
+    "node-telegram-bot-api": "^0.61.0"
+  }
+}
