@@ -1,0 +1,1 @@
+//.   generateAnketaText() va generateAnketaInlineMarkup()
