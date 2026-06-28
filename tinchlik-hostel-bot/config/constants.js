@@ -1,0 +1,1 @@
+//.   Tizimdagi o'zgarmaslar
