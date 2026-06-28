@@ -1,0 +1,69 @@
+📁 tinchlik-hostel-bot/
+│
+├── 📄 server.js                 # Express web-server, Botni ishga tushirish (Polling)
+├── 📄 package.json              # node-telegram-bot-api, express, node-cron kutubxonalari ro'yxati
+├── 📄 .env                      # 🔐 TOKEN, PORT va MAIN_SUPER_ADMIN (Maxfiy kalitlar)
+│
+├── 📁 config/                   
+│   ├── 📄 botConfig.js          # .env dan ma'lumotlarni o'quvchi modul
+│   ├── 📄 constants.js          # Tizimdagi o'zgarmaslar
+│   └── 📄 keyboards.js          # ⌨️ Barcha asosiy klaviaturalar (mainKeyboard, adminMainKeyboard, genderKeyboard, paymentTypeKeyboard)
+│
+├── 📁 core/                     
+│   ├── 📄 database.js           # db va saveDB() mantiqi (Baza bilan xavfsiz ishlash)
+│   └── 📄 session.js            # sessions va saveSessions() mantiqi
+│
+├── 📁 utils/                    
+│   ├── 📄 formatters.js         # formatMoney, parseMoney, formatDate (Sana va pul formatlari)
+│   ├── 📄 helpers.js            # clearAndSend() (Eski xabarlarni o'chirib yangisini yuborish)
+│   ├── 📄 navigation.js         # pushState, popState va handleStateReturn() (Global Ortga qaytish)
+│   └── 📄 markupGenerators.js   # generateAnketaText() va generateAnketaInlineMarkup()
+│
+├── 📁 services/                 
+│   ├── 📄 adminNotifier.js      # sendRequestToAdmins, sendRenewRequestToAdmins, sendMurojaatToAdmins
+│   └── 📄 cronJobs.js           # cron.schedule (Kuniga 3 mahal qarzni tekshirish, ogohlantirish va qarz guruhiga otish)
+│
+└── 📁 handlers/                 # 🧠 MANTIQIY PROCESSORLAR (Asosiy dvigatel)
+    │
+    ├── 📄 textRouter.js         # bot.on('message') -> Matnli xabarlarni holatiga qarab taqsimlovchi
+    ├── 📄 callbackRouter.js     # bot.on('callback_query') -> Inline tugmalarni taqsimlovchi
+    ├── 📄 photoRouter.js        # bot.on('photo') -> Rasm (Selfi, Chek, Murojaat) yuklanishini boshqaruvchi
+    │
+    ├── 📁 commands/             # Buyruqlar
+    │   ├── 📄 start.js          # /start (Foydalanuvchi va aktiv/qarz kvartirantni ajratish)
+    │   ├── 📄 admin.js          # /admin (Kutubxona tekshiruvi va admin panelni ochish)
+    │   └── 📄 groupSetup.js     # /aktiv, /qarz, /arxiv buyruqlari (Guruhlarni bazaga ulash)
+    │
+    ├── 📁 registration/         # 📝 RO'YXATDAN O'TISH
+    │   ├── 📄 personalInfo.js   # FISH, Tug'ilgan sana, Telefon, Pasport, JSHSHIR, Jins
+    │   ├── 📄 roomSelection.js  # Viloyat -> Filial -> Xona -> Yotoq tanlash
+    │   └── 📄 paymentSetup.js   # Muddati (Kunlik/Oylik) va To'lov turi (Karta/Naqd)
+    │
+    ├── 📁 tenant/               # 👤 KVARTIRANT DASHBOARD
+    │   ├── 📄 infoPanel.js      # Ijara muddati, Karta raqam, Qoidalar tugmalari
+    │   ├── 📄 renewPayment.js   # Muddatni uzaytirish va To'lov turini tanlash
+    │   └── 📄 appeal.js         # Adminga murojaat yo'llash (Matn + Rasm)
+    │
+    └── 📁 admin/                # 👑 ADMIN PANEL
+        │
+        ├── 📄 statistics.js     # 📊 STATISTIKA (Aktivlar, qarzlar, erkak/ayol, bo'sh yotoqlar hisob-kitobi)
+        ├── 📄 broadcast.js      # 📢 Xabarnoma (Barchaga global e'lon jo'natish)
+        │
+        ├── 📁 settings/         # ⚙️ TIZIM SOZLAMALARI
+        │   ├── 📄 hostelInfo.js # Qoida sozlash va HOSTEL tanishuv sozlamalari
+        │   └── 📄 finance.js    # Karta Sozlamalari (Raqam, Ega ismi) va KUNLIK Toʻlovni sozlash
+        │
+        ├── 📁 structure/        # 🏢 HOSTEL STRUKTURASI
+        │   ├── 📄 addItems.js   # Yangi Viloyat, Filial, Xona, Yotoq + Narx yozib kiritish
+        │   └── 📄 deleteItems.js# Inline tugmalar orqali Viloyat, Filial, Xona, Yotoqni o'chirish (dv_v_, df_f_ ...)
+        │
+        ├── 📁 adminControl/     # 👮‍♂️ ADMINLAR BOSHQARUVI
+        │   ├── 📄 manage.js     # Yangi ID kiritish, Ism berish, Tahrirlash, O'chirish
+        │   └── 📄 roles.js      # Oliy admin (SuperAdmin) berish va olish
+        │
+        └── 📁 tenantControl/    # 🛂 KVARTIRANTLAR UCHUN HARAKATLAR
+            ├── 📄 approvals.js  # verify_yes/no, renew_yes/no (Anketa va To'lovni tasdiqlash/rad etish)
+            ├── 📄 groupNotes.js # group_note_ (Eslatma yozish va guruhdagi xabarni avtomatik yangilash)
+            ├── 📄 eviction.js   # group_exit_ (Kvartirantni arxivga o'tkazish va yotoqni bo'shatish)
+            └── 📄 appealClose.js# murojaat_ok (Murojaatni o'qildi qilib yopish)
+            
