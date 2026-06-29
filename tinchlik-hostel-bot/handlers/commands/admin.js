@@ -5,6 +5,8 @@ const { pushState } = require('../../utils/navigation');
 const { clearAndSend } = require('../../utils/helpers');
 const { adminMainKeyboard } = require('../../config/keyboards');
 
+// Fayl funksiya ko'rinishida eksport qilinmoqda, endi server.js (bot) ni bemalol uzata oladi
+module.exports = (bot) => {
 bot.onText(/\/admin/, async (msg) => {
   const chatId = msg.chat.id;
   if (!db.admins.includes(chatId)) { try { await bot.deleteMessage(chatId, msg.message_id); } catch(e){} return bot.sendMessage(chatId, "Kechirasiz, huquqingiz yo'q!"); }
@@ -15,3 +17,4 @@ bot.onText(/\/admin/, async (msg) => {
   pushState(chatId, 'ADMIN_MAIN');
   await clearAndSend(chatId, "👑 <b>Admin paneliga xush kelibsiz!</b>", adminMainKeyboard, true);
 });
+};
