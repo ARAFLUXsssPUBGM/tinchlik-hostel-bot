@@ -63,8 +63,8 @@ async function prepareIntroUpload(bot, chatId, branchId) {
     saveDB();
     saveSession(chatId, session);
 
-    await bot.sendMessage(chatId, "Kiritmoqchi bo'lgan tanishtiruv Rasmlari va Xabaringizni (caption qilib) chatga yuboring. \n\nBarchasini yuborib bo'lgach, '✅ Yuklashni yakunlash' tugmasini bosing.", {
-        reply_markup: { inline_keyboard: [[{ text: '✅ Yuklashni yakunlash', callback_data: 'finish_intro_upload' }]] }
+    await bot.sendMessage(chatId, "☺️👍 Kiritmoqchi bo'lgan tanishtiruv Rasmlari va Xabaringizni (caption qilib) chatga yuboring. \n\nBarchasini yuborib bo'lgach, '✅ Maʼlumotni Yuklash' tugmasini bosing.", {
+        reply_markup: { inline_keyboard: [[{ text: '✅ Maʼlumotni Yuklash', callback_data: 'finish_intro_upload' }]] }
     });
 }
 
