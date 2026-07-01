@@ -1,10 +1,10 @@
 //Yangi Viloyat, Filial, Xona, Yotoq + Narx yozib kiritish
+// 31. addItems.js
 const bot = require('../../../config/botConfig');
 const { getDB, saveDB } = require('../../../core/database');
 const { getSession, saveSession } = require('../../../core/session');
 const { pushState } = require('../../../utils/navigation');
 
-// Eski koddagi Asosiy Boshqaruv Menyusi (Reply Keyboard)
 const structKbd = {
   keyboard: [
     [{ text: "➕ Viloyat qo'shish" }, { text: "🗑 Viloyatni o'chirish" }],
@@ -16,23 +16,20 @@ const structKbd = {
   resize_keyboard: true
 };
 
-// 1. MATNLAR VA ASOSIY TUGMALARNI QABUL QILUVCHI QISM (Eski va yangi yaxlitlangan)
 async function handleStructureTextInputs(msg, state) {
     const chatId = msg.chat.id;
     const text = msg.text;
     const db = getDB();
     const session = getSession(chatId);
 
-    // Eski xabarni tozalash (agar iloji bo'lsa)
     try { await bot.deleteMessage(chatId, msg.message_id); } catch(e){}
 
-    // Asosiy menyuni ochish
+    // Tahrirlandi: textRouter.js va addItems.js o'rtasidagi holat tekshiruvi to'liq sinxronlandi
     if (state === 'ADMIN_MAIN' && text === "🏨 HOSTEL Sozlash") {
         pushState(chatId, 'ADMIN_HOSTEL_STRUCT');
         return bot.sendMessage(chatId, "Hostel strukturasini boshqarish:", { reply_markup: structKbd });
     }
 
-    // ➕ QO'SHISH TUGMALARI BOSILGANDA (Zanjirning boshi)
     if (state === 'ADMIN_HOSTEL_STRUCT') {
         const regions = db.hostel_structure || {};
         const hasRegions = Object.keys(regions).length > 0;
@@ -61,7 +58,6 @@ async function handleStructureTextInputs(msg, state) {
         }
     }
 
-    // MATN YUBORILGANDA BAZAGA SAQLASH (Yangi qo'shilgan mantiq)
     if (session.state === 'WAITING_REGION_NAME') {
         const regId = 'viloyat_' + Date.now();
         db.hostel_structure[regId] = { name: text, branches: {} };
@@ -99,8 +95,9 @@ async function handleStructureTextInputs(msg, state) {
 
         if (isNaN(price)) return bot.sendMessage(chatId, "Iltimos, narxni faqat raqamlarda kiriting!");
 
+        // Tahrirlandi: isOccupied: false o'rniga isFree: true qilingan
         db.hostel_structure[regId].branches[brId].rooms[rmId].beds[bedId] = { 
-            name: bedName, price: price, isOccupied: false, tenantId: null 
+            name: bedName, price: price, isFree: true, tenantId: null 
         };
         saveDB(); 
         session.state = 'ADMIN_HOSTEL_STRUCT'; session.tempData = null; saveSession(chatId, session);
@@ -108,21 +105,18 @@ async function handleStructureTextInputs(msg, state) {
     }
 }
 
-// 2. INLINE TUGMALARNI QABUL QILUVCHI QISM (Zanjirli davomiylik)
 async function handleStructureCallbacks(callbackQuery) {
     const chatId = callbackQuery.message.chat.id;
     const action = callbackQuery.data;
     const db = getDB();
     const session = getSession(chatId);
 
-    // FILIAL ZANJIRI
     if (action.startsWith('add_br_reg_')) {
         const regId = action.split('add_br_reg_')[1];
         session.state = `WAITING_BRANCH_NAME|${regId}`; saveSession(chatId, session);
         return bot.sendMessage(chatId, "Iltimos, kiritmoqchi bo'lgan Filial nomini chatga yozing:", { reply_markup: { remove_keyboard: true } });
     }
 
-    // XONA ZANJIRI
     if (action.startsWith('add_rm_reg_')) {
         const regId = action.split('add_rm_reg_')[1];
         const branches = db.hostel_structure[regId].branches;
@@ -136,7 +130,6 @@ async function handleStructureCallbacks(callbackQuery) {
         return bot.sendMessage(chatId, "Iltimos, kiritmoqchi bo'lgan Xona nomini chatga yozing:", { reply_markup: { remove_keyboard: true } });
     }
 
-    // YOTOQ ZANJIRI
     if (action.startsWith('add_bd_reg_')) {
         const regId = action.split('add_bd_reg_')[1];
         const branches = db.hostel_structure[regId].branches;
@@ -157,4 +150,4 @@ async function handleStructureCallbacks(callbackQuery) {
 }
 
 module.exports = { handleStructureTextInputs, handleStructureCallbacks, structKbd };
-              
+                                   
