@@ -52,35 +52,34 @@ module.exports = (bot) => {
         if (state === 'REG_SELFIE') {
             sessions[chatId].regData.selfiePhoto = photoId;
             pushState(chatId, 'REG_GENDER');
-            // Tahrirlandi: bot argumenti olib tashlandi
-            await clearAndSend(chatId, "7. Jinsingizni belgilang:", genderKeyboard);
+            // Tuzatildi: bot argumenti qaytarildi
+            await clearAndSend(bot, chatId, "7. Jinsingizni belgilang:", genderKeyboard);
         } 
         else if (state === 'REG_SEND_CHEK') {
             sessions[chatId].regData.chekPhoto = photoId;
-            // Tahrirlandi: bot argumenti olib tashlandi
-            await sendRequestToAdmins(chatId, true);
+            // Tuzatildi: bot argumenti qaytarildi
+            await sendRequestToAdmins(bot, chatId, true);
             sessions[chatId].state = 'MAIN_MENU';
             saveSessions();
-            // Tahrirlandi: bot argumenti olib tashlandi
-            await clearAndSend(chatId, "Soʻrovingiz Adminga yuborildi. Chek tekshirilib tasdiqlangach bot faollashadi.", mainKeyboard);
+            // Tuzatildi: bot argumenti qaytarildi
+            await clearAndSend(bot, chatId, "Soʻrovingiz Adminga yuborildi. Chek tekshirilib tasdiqlangach bot faollashadi.", mainKeyboard);
         } 
         else if (state === 'KVAR_SEND_CHEK') {
             sessions[chatId].renewData.chekPhoto = photoId;
-            // Tahrirlandi: bot argumenti olib tashlandi
-            await sendRenewRequestToAdmins(chatId, true);
+            // Tuzatildi: bot argumenti qaytarildi
+            await sendRenewRequestToAdmins(bot, chatId, true);
             sessions[chatId].state = 'KVARTIRANT_MENU';
             saveSessions();
-            // Tahrirlandi: bot argumenti olib tashlandi
-            await clearAndSend(chatId, "To'lov skrinshoti adminga yetkazildi. Tekshiruvdan so'ng muddatingiz yangilanadi.", kvartirantKeyboard);
+            // Tuzatildi: bot argumenti qaytarildi
+            await clearAndSend(bot, chatId, "To'lov skrinshoti adminga yetkazildi. Tekshiruvdan so'ng muddatingiz yangilanadi.", kvartirantKeyboard);
         } 
         else if (state === 'KVAR_SEND_MUROJAAT') {
-            // Tahrirlandi: bot argumenti olib tashlandi
-            await sendMurojaatToAdmins(chatId, photoId, msg.caption || "");
+            // Tuzatildi: bot argumenti qaytarildi
+            await sendMurojaatToAdmins(bot, chatId, photoId, msg.caption || "");
             sessions[chatId].state = 'KVARTIRANT_MENU';
             saveSessions();
-            // Tahrirlandi: bot argumenti olib tashlandi
-            await clearAndSend(chatId, "Murojaatingiz barcha adminlarga yuborildi!", kvartirantKeyboard);
+            // Tuzatildi: bot argumenti qaytarildi
+            await clearAndSend(bot, chatId, "Murojaatingiz barcha adminlarga yuborildi!", kvartirantKeyboard);
         }
     });
 };
-            
