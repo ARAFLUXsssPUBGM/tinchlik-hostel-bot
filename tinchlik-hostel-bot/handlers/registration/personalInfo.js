@@ -16,10 +16,10 @@ module.exports = async (msg, state) => {
     if (text === "🏨 HOSTEL bilan tanishish") return clearAndSend(chatId, db.settings.hostel_info, mainKeyboard);
     if (text === "🛂 HOSTEL Qoidalar") return clearAndSend(chatId, db.settings.hostel_rules, mainKeyboard);
   }
-  if (state === 'REG_FISH') { sessions[chatId].regData = { fish: text }; pushState(chatId, 'REG_BIRTHTIME'); return clearAndSend(chatId, "2. Tug'ilgan sanangizni kiriting (Masalan: 01.01.2000):", backKeyboard); }
-  if (state === 'REG_BIRTHTIME') { sessions[chatId].regData.birth = text; pushState(chatId, 'REG_PHONE'); return clearAndSend(chatId, "3. Telefon raqamingizni kiriting (Masalan: +998901234567):", backKeyboard); }
+  if (state === 'REG_FISH') { sessions[chatId].regData = { fish: text }; pushState(chatId, 'REG_BIRTHTIME'); return clearAndSend(chatId, "2. Tug'ilgan sanangizni kiriting (kun.oy.yil):", backKeyboard); }
+  if (state === 'REG_BIRTHTIME') { sessions[chatId].regData.birth = text; pushState(chatId, 'REG_PHONE'); return clearAndSend(chatId, "3. Telefon raqamingizni kiriting (Masalan: +998700350607):", backKeyboard); }
   if (state === 'REG_PHONE') { sessions[chatId].regData.phone = text; pushState(chatId, 'REG_PASSPORT'); return clearAndSend(chatId, "4. Pasport seriyasi va raqamini kiriting (Masalan: AA1234567):", backKeyboard); }
-  if (state === 'REG_PASSPORT') { sessions[chatId].regData.passport = text; pushState(chatId, 'REG_JSHSHIR'); return clearAndSend(chatId, "5. JSHSHIR (14 xonali shaxsiy raqamingiz) ni kiriting:", backKeyboard); }
+  if (state === 'REG_PASSPORT') { sessions[chatId].regData.passport = text; pushState(chatId, 'REG_JSHSHIR'); return clearAndSend(chatId, "5. Pasport orqasidagi JSHSHIR (14 xonali shaxsiy raqamingiz) ni kiriting:", backKeyboard); }
   if (state === 'REG_JSHSHIR') { sessions[chatId].regData.jshshir = text; pushState(chatId, 'REG_SELFIE'); return clearAndSend(chatId, "6. Iltimos, yuzingiz aniq ko'ringan bitta selfi rasmingizni yuboring:", backKeyboard); }
   if (state === 'REG_GENDER' && (text === "Erkak" || text === "Ayol")) {
     sessions[chatId].regData.gender = text; pushState(chatId, 'REG_CHOOSE_VILOYAT');
