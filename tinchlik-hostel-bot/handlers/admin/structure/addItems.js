@@ -4,6 +4,9 @@ const bot = require('../../../config/botConfig');
 const { getDB, saveDB } = require('../../../core/database');
 const { getSession, saveSession } = require('../../../core/session');
 const { pushState } = require('../../../utils/navigation');
+// Tuzatildi: funksiya va tugmalar import qilinmoqda
+const { clearAndSend } = require('../../../utils/helpers');
+const { adminMainKeyboard } = require('../../../config/keyboards');
 
 const structKbd = {
   keyboard: [
@@ -24,7 +27,13 @@ async function handleStructureTextInputs(msg, state) {
 
     try { await bot.deleteMessage(chatId, msg.message_id); } catch(e){}
 
-    // Tahrirlandi: textRouter.js va addItems.js o'rtasidagi holat tekshiruvi to'liq sinxronlandi
+    // Tuzatildi: Ortga qaytish mantig'i qo'shildi
+    if (text === "⬅️ Ortga qaytish") {
+        session.state = 'ADMIN_MAIN';
+        saveSession(chatId, session);
+        return clearAndSend(bot, chatId, "Asosiy admin menyusiga qaytdingiz.", adminMainKeyboard);
+    }
+
     if (state === 'ADMIN_MAIN' && text === "🏨 HOSTEL Sozlash") {
         pushState(chatId, 'ADMIN_HOSTEL_STRUCT');
         return bot.sendMessage(chatId, "Hostel strukturasini boshqarish:", { reply_markup: structKbd });
@@ -95,7 +104,6 @@ async function handleStructureTextInputs(msg, state) {
 
         if (isNaN(price)) return bot.sendMessage(chatId, "Iltimos, narxni faqat raqamlarda kiriting!");
 
-        // Tahrirlandi: isOccupied: false o'rniga isFree: true qilingan
         db.hostel_structure[regId].branches[brId].rooms[rmId].beds[bedId] = { 
             name: bedName, price: price, isFree: true, tenantId: null 
         };
@@ -150,4 +158,4 @@ async function handleStructureCallbacks(callbackQuery) {
 }
 
 module.exports = { handleStructureTextInputs, handleStructureCallbacks, structKbd };
-                                   
+                                                                                                  
